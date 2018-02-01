@@ -3,7 +3,9 @@ import rospy
 from std_msgs.msg import String
 
 def callback(data):
-    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+    rospy.loginfo(rospy.get_caller_id() + ": heard %s", data.data)
+    with open('hw1_output.txt','ab') as file:
+        file.write(str(data.data)+'\n')
     
 def listener():
 

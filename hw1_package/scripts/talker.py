@@ -6,11 +6,11 @@ from std_msgs.msg import String
 def talker():
     pub = rospy.Publisher('/hw1_time', String, queue_size=10)
     rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(1) # 1hz
     while not rospy.is_shutdown():
-        hello_str = "hello world %s" % rospy.get_time()
-        rospy.loginfo(hello_str)
-        pub.publish(hello_str)
+        output_str = str(rospy.get_time())
+        rospy.loginfo(output_str)
+        pub.publish(output_str)
         rate.sleep()
 
 if __name__ == '__main__':

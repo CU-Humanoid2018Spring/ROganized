@@ -13,6 +13,5 @@
 
 ## Run Talker and Listener
 
-1. `roscore`
-2. Open a new terminal `rosrun hw1_package talker.py`
-2. Open a new terminal `rosrun hw1_package listener.py`
+1. `roslaunch hw1_package hw1.launch`
+2. After execution, the output file will be stored in `~/.ros/hw1_output.txt`
