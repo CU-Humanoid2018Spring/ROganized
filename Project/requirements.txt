@@ -1,0 +1,2 @@
+Humanoids-2
+python-opencv-contrib==3.4.0.12
