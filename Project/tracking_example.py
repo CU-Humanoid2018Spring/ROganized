@@ -10,7 +10,7 @@ if __name__ == '__main__' :
     # Instead of MIL, you can also use
  
     tracker_types = ['BOOSTING', 'MIL','KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
-    tracker_type = tracker_types[4]
+    tracker_type = tracker_types[5]
  
     if int(minor_ver) < 3:
         tracker = cv2.Tracker_create(tracker_type)
@@ -29,8 +29,8 @@ if __name__ == '__main__' :
             tracker = cv2.TrackerGOTURN_create()
  
     # Read video
-    video = cv2.VideoCapture('Street - 5025.mp4')
-    # video = cv2.VideoCapture('Car Racing - 74.mp4')
+    video = cv2.VideoCapture('videos/Street - 5025.mp4')
+    # video = cv2.VideoCapture('videos/Car Racing - 74.mp4')
  
     # Exit if video not opened.
     if not video.isOpened():
