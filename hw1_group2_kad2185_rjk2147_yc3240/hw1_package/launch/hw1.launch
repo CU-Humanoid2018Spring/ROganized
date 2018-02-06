@@ -1,4 +1,4 @@
 <launch>
-  <node name="subscriber" pkg="hw1_package" type="subscriber.py"/>
-  <node name="publisher" pkg="hw1_package" type="publisher.py"/>
+  <node name="listener" pkg="hw1_package" type="subscriber.py"/>
+  <node name="talker" pkg="hw1_package" type="publisher.py"/>
 </launch>
