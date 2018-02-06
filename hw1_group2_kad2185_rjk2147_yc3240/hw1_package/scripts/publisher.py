@@ -2,9 +2,9 @@
 import rospy
 from std_msgs.msg import String
 
-def talker():
+def publisher():
     pub = rospy.Publisher('/hw1_time', String, queue_size=10)
-    rospy.init_node('talker', anonymous=True)
+    rospy.init_node('publisher', anonymous=True)
     rate = rospy.Rate(1) # 1hz
     while not rospy.is_shutdown():
         output_str = str(rospy.get_time())
@@ -14,6 +14,6 @@ def talker():
 
 if __name__ == '__main__':
     try:
-        talker()
+        publisher()
     except rospy.ROSInterruptException:
         pass
