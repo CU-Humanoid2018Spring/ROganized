@@ -12,6 +12,6 @@ def listener():
     rospy.spin()
 
 if __name__ == '__main__':
-    file = open('hw1_output.txt','wb')
+    file = open('../../hw1_out.txt','wb')
     listener()
     file.close()
