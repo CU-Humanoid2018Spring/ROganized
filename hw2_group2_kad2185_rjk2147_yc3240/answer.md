@@ -19,6 +19,10 @@
 2. 15 nodes
 3. 16 nodes
 
+# Part 2
+1. 
+2. There are two topics from the depth camera: /head_camera/depth_registered/points and /head_camera/depth_downsample/points. The least number of navigation to view the "Fetch Robotics Logo" is 2. Please see <PICTURE>.
+
 
 ## Appendix
 
