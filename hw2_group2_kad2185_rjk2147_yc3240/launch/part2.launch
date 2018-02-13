@@ -2,7 +2,7 @@
 <launch>
   <include file="$(find fetch_gazebo)/launch/playground.launch"/>
   <include file="$(find fetch_gazebo_demo)/launch/fetch_nav.launch"/>
-  <include file="$(find fetch_navigation)/launch/build_map.launch" output="screen"/>
+  <include file="$(find fetch_navigation)/launch/build_map.launch" />
 
   <arg name="rvizconfig" value="$(find hw2_group2_kad2185_rjk2147_yc3240)/config/part2.rviz"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)"/>
