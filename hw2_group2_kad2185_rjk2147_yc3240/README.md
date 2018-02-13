@@ -13,7 +13,7 @@ $ roslaunch hw2_group2_kad2185_rjk2147_yc3240 part1.launch
 $ roslaunch hw2_group2_kad2185_rjk2147_yc3240 part2.launch
 ```
 
-[part2](misc_images/part2.png)
+![part2](misc_images/part2.png)
 
 3. Demonstrate Graspit! planning. The GUI will close after 10 seconds.
 
