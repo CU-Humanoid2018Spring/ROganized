@@ -152,8 +152,7 @@
       </box>
       <model_count>5</model_count>
       <distribution>
-        <type>random</type>
-        <step>0.01</step>
+        <type>linear-x</type>
       </distribution>
     </population>
     <gui fullscreen='0'>
