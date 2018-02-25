@@ -14,6 +14,12 @@ from control_msgs.msg import PointHeadAction, PointHeadGoal
 from cv_bridge import CvBridge, CvBridgeError
 import  numpy as np
 
+# This thread (https://answers.ros.org/question/257980/how-can-i-dynamically-get-the-coordinate-of-a-model-from-gazebo/) suggests
+# using AMCL (http://wiki.ros.org/amcl), a Monte Carlo localization package, with laserscans to estimate robot position against
+# surrounding objects, like the ones on the table.
+
+# To see gazebo's tracked poses, run $ rostopic echo -n 1 /gazebo/model_states
+
 class ImageConverter:
 
   def __init__(self):
