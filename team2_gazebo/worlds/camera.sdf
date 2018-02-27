@@ -10,32 +10,32 @@
     <include>
       <uri>model://cafe_table</uri>
       <name>table1</name>
-      <pose>0.0 0 -0.08 0 0 0</pose>
+      <pose>1 -0.35 -0.08 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://cafe_table</uri>
+      <name>table2</name>
+      <pose>1 0.35 -0.08 0 0 0</pose>
     </include>
     <include>
       <uri>model://bowl</uri>
-      <pose>0.1 -0.4 1.1 0.2 0 0.1</pose>
+      <pose>1.1 -0.4 1.1 0.2 0 0.1</pose>
     </include>
     <include>
       <uri>model://cricket_ball</uri>
-      <pose>0.2 0.2 1.0 0 0 0</pose>
+      <pose>1.2 0.2 1.0 0 0 0</pose>
     </include>
     <include>
       <uri>model://beer</uri>
-      <pose>-0.3 0.3 1.0 0 0 0</pose>
+      <pose>0.7 0.3 1.0 0 0 0</pose>
     </include>
     <include>
       <uri>model://disk_part</uri>
-      <pose>0 0 1 0 0 0</pose>
+      <pose>1 -0.7 1 0 0 0</pose>
     </include>
     <include>
       <uri>model://plastic_cup</uri>
-      <pose>-0.25 0.1 1.0 0 1.2 0</pose>
+      <pose>0.75 0.1 1.0 0 1.2 0</pose>
     </include>
-    <!--include>
-      <uri>model://kinect</uri>
-      <pose>0 0 2 0 1.57 0</pose>
-      <static>true</static>
-    </include-->
   </world>
 </sdf>
