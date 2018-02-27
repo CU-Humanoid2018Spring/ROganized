@@ -1,4 +1,4 @@
-# Humanoid Robot Team 2
+# Homework 1
 
 ## Setup workspace and compile
 
