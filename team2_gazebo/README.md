@@ -4,7 +4,7 @@
 
 Make sure you follow HW2 and installed Fetch packages.
 
-## How to use it?
+## (Old: the fetch model will be merged in the future)
 
 1. This will create the simulated world. You can insert more objects through
 Gazebo gui.
@@ -18,8 +18,11 @@ Gazebo gui.
 $ rosrun team2_gazebo find_obejct.py
 ```
 
-## To Kelsey
+## Generate training dataset
 
-1. Try `roslaunch team2_gazebo camera.launch` to view the default setting.
-
-2. You will need to relocate to objects. I didn't do it before, but [this](http://answers.gazebosim.org/question/16067/how-to-get-the-position-of-certain-object-in-gazebo/) might provide with some hints.
+1. If you want to see the gazebo gui, use 
+   `$ roslaunch team2_gazebo camera.launch gui:=true`.
+   Otherwise, `roslaunch team2_gazebo camera.launch`
+ 
+2. Run `$ rosrun team2_gazebo spawn_objects.py`, the plastic cup will switch
+positions randomly.

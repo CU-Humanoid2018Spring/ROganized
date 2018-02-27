@@ -1,9 +1,8 @@
 <launch>
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
-     <arg name="gui" value="true"/>
-     <arg name="world_name" value="$(find team2_gazebo)/worlds/camera.sdf"/>
-    <!--arg name="world_name" value="$(find team2_gazebo)/worlds/messy_table3.sdf"/-->
-   </include>
+    <arg name="gui" value="true"/>
+    <arg name="world_name" value="$(find team2_gazebo)/worlds/camera_2.sdf"/>
+  </include>
 
   <arg name="model" default="$(find team2_gazebo)/urdf/camera.urdf.xacro"/>
   <arg name="gui" default="true" />
@@ -13,6 +12,6 @@
 
   <arg name="rvizconfig" value="$(find team2_gazebo)/config/camera.rviz"/>
   <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(arg rvizconfig)" />
-  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model sensor_stick" />
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model camera" />
 
 </launch>
