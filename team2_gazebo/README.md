@@ -15,7 +15,7 @@ Gazebo gui.
  show them in OpenCV viewer. You can use this to visualize your result.
 
 ```
-$ rosrun team2_gazebo find_obejct.py
+$ rosrun team2_gazebo find_object.py
 ```
 
 ## Generate training dataset
@@ -24,5 +24,5 @@ $ rosrun team2_gazebo find_obejct.py
    `$ roslaunch team2_gazebo camera.launch gui:=true`.
    Otherwise, `roslaunch team2_gazebo camera.launch`
  
-2. Run `$ rosrun team2_gazebo spawn_objects.py`, the plastic cup will switch
+2. Run `$ rosrun team2_gazebo spawn_random_objects.py`, the plastic cup will switch
 positions randomly.

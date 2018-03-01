@@ -7,12 +7,14 @@ roslib.load_manifest('team2_gazebo')
 import sys
 import rospy
 import cv2
+import os
+import  numpy as np
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from control_msgs.msg import PointHeadActionGoal
 from control_msgs.msg import PointHeadAction, PointHeadGoal
 from cv_bridge import CvBridge, CvBridgeError
-import  numpy as np
+
 
 # This thread (https://answers.ros.org/question/257980/how-can-i-dynamically-get-the-coordinate-of-a-model-from-gazebo/) suggests
 # using AMCL (http://wiki.ros.org/amcl), a Monte Carlo localization package, with laserscans to estimate robot position against
@@ -21,12 +23,24 @@ import  numpy as np
 # To see gazebo's tracked poses, run $ rostopic echo -n 1 /gazebo/model_states
 
 class ImageConverter:
+  """Subscribe to image feed and publish to output_image/."""
 
   def __init__(self):
-    self.image_pub = rospy.Publisher("/team2/output_image",Image, queue_size=10)
+    self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=10)
 
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("/head_camera/rgb/image_raw",Image,self.callback)
+
+
+  def save_img(self, subdir, prefix='scene', suffix='.png'):
+    try:
+      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+      # Get number to append to image name
+      n = len([name for name in os.listdir(subdir) if os.path.isfile(name)])
+      cv2.imwrite(os.path.join(subdir, prefix + str(n) + suffix), cv_image)
+    except CvBridgeError as e:
+      print(e)
+
 
   def callback(self,data):
     try:
@@ -49,6 +63,7 @@ class ImageConverter:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
     except CvBridgeError as e:
       print(e)
+
 
 # Point the head using controller
 class PointHeadClient(object):
