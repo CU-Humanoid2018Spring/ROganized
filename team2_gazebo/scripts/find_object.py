@@ -32,16 +32,6 @@ class ImageConverter:
     self.image_sub = rospy.Subscriber("/head_camera/rgb/image_raw",Image,self.callback)
 
 
-  def save_img(self, subdir, prefix='scene', suffix='.png'):
-    try:
-      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-      # Get number to append to image name
-      n = len([name for name in os.listdir(subdir) if os.path.isfile(name)])
-      cv2.imwrite(os.path.join(subdir, prefix + str(n) + suffix), cv_image)
-    except CvBridgeError as e:
-      print(e)
-
-
   def callback(self,data):
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -52,7 +42,7 @@ class ImageConverter:
     # OPENCV PIPELINE START HERE
     (rows,cols,channels) = cv_image.shape
 
-    # UNCOMMENT IF YOU WANT USE OPENCV VIEWER
+    # UNCOMMENT IF YOU WANT TO USE OPENCV VIEWER
     cv2.imshow("Image window", cv_image)
     cv2.waitKey(3)
 
