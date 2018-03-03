@@ -72,10 +72,12 @@ class ImageConverter:
   def callback(self,data):
     prefix = 'scene'
     suffix = '.png'
-    subdir = 'messy_imgs'
+    subdir = 'src/Humanoid-Team2/messy_imgs'
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
       path = os.path.join(os.getcwd(), subdir)
+      if not os.path.exists(path):
+            os.makedirs(path)
       print("saving image to: ", path)
       if os.path.isdir(subdir):
         n = len([name for name in os.listdir(subdir) if os.path.isfile(name)])
@@ -85,8 +87,8 @@ class ImageConverter:
       img_path = os.path.join(path, prefix + str(n) + suffix)
       cv2.imwrite(img_path, cv_image)
       print("saved image to: ", path)
-      cv2.imshow('image', cv_image)
-      cv2.waitKey(3)
+      # cv2.imshow('image', cv_image)
+      # cv2.waitKey(2)
     except CvBridgeError as e:
       print(e)
 
@@ -113,7 +115,8 @@ def main(args):
     random_pose.pose.position.y = np.random.uniform(-0.75,0.75)
     cup_mover.publish(random_pose)
     r.sleep()
-  cv2.destroyAllWindows()
+
+  # cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
