@@ -53,20 +53,10 @@ class ImageConverter:
     """Subscribe to image feed and publish to output_image/."""
 
     def __init__(self):
-        self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=10)
+        self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=1)
 
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.callback)
-
-
-    # def save_img(self, subdir, prefix='scene', suffix='.png'):
-    #   try:
-    #     cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    #     # Get number to append to image name
-    #     n = len([name for name in os.listdir(subdir) if os.path.isfile(name)])
-    #     cv2.imwrite(os.path.join(subdir, prefix + str(n) + suffix), cv_image)
-    #   except CvBridgeError as e:
-    #     print(e)
 
 
     def callback(self,data):
@@ -88,7 +78,7 @@ class ImageConverter:
             img_path = os.path.join(path, prefix + str(n) + suffix)
             cv2.imwrite(img_path, cv_image)
             print("saved image to: ", img_path)
-            # cv2.imshow('image', cv_image)
+            cv2.imshow('image', cv_image)
             cv2.waitKey(2000)
         except CvBridgeError as e:
             print(e)

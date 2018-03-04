@@ -5,14 +5,14 @@
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
     <arg name="gui" value="true"/>
-    <arg name="world_name" value="$(find team2_gazebo)/worlds/camera.sdf"/>
+    <arg name="world_name" value="$(find team2_gazebo)/worlds/neat_camera.sdf"/>
   </include>
 
   <!-- Spawn Kinect camera model -->
   <arg name="model" default="$(find team2_gazebo)/urdf/camera.urdf.xacro"/>
   <param name="camera_description" command="$(find xacro)/xacro $(arg model)" />
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
-        args="-urdf -x 1 -z 2.12 -param camera_description -model camera" />
+        args="-urdf -x 2 -z 2.12 -param camera_description -model camera" />
 
   <!-- RViz -->
   <arg name="rvizconfig" value="$(find team2_gazebo)/config/camera.rviz"/>

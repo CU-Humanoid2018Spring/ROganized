@@ -24,5 +24,5 @@ $ rosrun team2_gazebo find_object.py
    `$ roslaunch team2_gazebo camera.launch gui:=true`.
    Otherwise, `roslaunch team2_gazebo camera.launch`
  
-2. Run `$ rosrun team2_gazebo spawn_random_objects.py`, the plastic cup will switch
-positions randomly.
+2. Run `$ rosrun team2_gazebo spawn_messy_objects.py`, the objects will
+switch places randomly, with each scene saved out to Humanoid-Team2/messy_imgs.
