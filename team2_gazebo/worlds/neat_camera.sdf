@@ -27,7 +27,7 @@
     </include>
     <include>
       <uri>model://coke_can</uri>
-      <name>coke1</name>
+      <name>coke_can1</name>
       <pose>1.7 0.3 0.75 0 0 0</pose>
     </include>
     <include>

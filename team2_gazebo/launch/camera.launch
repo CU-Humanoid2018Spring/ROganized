@@ -5,7 +5,7 @@
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
     <arg name="gui" value="true"/>
-    <arg name="world_name" value="$(find team2_gazebo)/worlds/neat_camera.sdf"/>
+    <arg name="world_name" value="$(find team2_gazebo)/worlds/camera.sdf"/>
   </include>
 
   <!-- Spawn Kinect camera model -->

@@ -22,8 +22,8 @@ Spawn and save random object configurations to 'Humanoid-Team2/messy_imgs'.
 models = ModelStates()
 all_objects = ['bowl',
                'coke_can',
+               'cordless_drill',
                'cricket_ball',
-               'drill',
                'hammer',
                'marble_1_5cm',
                'plastic_cup',
@@ -33,24 +33,41 @@ all_objects = ['bowl',
 def random_objects(n, selection=all_objects):
     """Pick n random object models by name from the available desk objects. """
     objs_i = np.random.choice(range(len(selection)), size=n, replace=True)
+    objs_i.sort()
     return [all_objects[i] for i in objs_i]
 
 # This example shows how to extract model info from gazebo topics
-def model_callback(msg):
-    models = msg  # TODO: Previous models are unused atm, possible to use to generate organized version?
-    table1_x, table1_y, table1_z, _ = msg.pose[msg.find('table1')]  # Get pos values of table1 from message
-    table2_x, table2_y, table2_z, _ = msg.pose[msg.find('table2')]  # Get pos values of table1 from message
+def model_callback(msg): # TODO: Previous models are unused atm, possible to use to generate organized version?
+    # Get table orientations #TODO: How to avoid doing this each callback? Tables are static.
+    table1_pos = msg.pose[msg.name.index('table1')]
+    table1_x = table1_pos.position.x
+    table1_y = table1_pos.position.y
+    table1_z = table1_pos.position.z
+    table2_pos = msg.pose[msg.name.index('table2')]
+    table2_x = table2_pos.position.x
+    table2_y = table2_pos.position.y
+    table2_z = table2_pos.position.z
+    # height = table1_z
+    height = 0.75  # TODO: get table height, table_z is -0.0002 inside msg.pos
 
-    print("table1 located at: ", table1_x, table1_y, table1_z)
-    print("table2 located at: ", table2_x, table2_y, table2_z)
-
-    # height = table1_z  # table_z is something like -0.0002 from the msg pos
-    height = 0.75  # TODO: get table height
-    center_x, center_y = (table1_x+table2_x)/1, (table1_y+table2_y)/2
+    # Center objects for placement
+    center_x, center_y = (table1_x+table2_x)/2, (table1_y+table2_y)/2
     dx = dy = max( abs(table2_y - table1_y)/2, abs(table2_x - table1_x)/2 )  # TODO: are the tables square?
+    # print("dx: ", dx)
 
     objs = random_objects(np.random.randint(low=4, high=10))
+    prev = all_objects[0]
+    i = 1
     for o in objs:
+        # Track previous object for naming suffix purposes.
+        if o == prev:
+            i += 1
+        else:
+            prev = o
+            i = 0
+        o += "_clone_" + str(i)
+        
+        # Generate a pos on the table and publish.
         mover = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
         random_pose = ModelState()
         random_pose.model_name = o
