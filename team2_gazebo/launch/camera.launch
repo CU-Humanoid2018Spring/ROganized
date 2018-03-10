@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <!-- Import Fetch robot -->
   <include file="$(find fetch_gazebo)/launch/include/fetch_pp.launch.xml" />
@@ -5,6 +6,7 @@
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
     <arg name="gui" value="true"/>
+    <arg name="use_sim_time" value="true"/> 
     <arg name="world_name" value="$(find team2_gazebo)/worlds/camera.sdf"/>
   </include>
 
