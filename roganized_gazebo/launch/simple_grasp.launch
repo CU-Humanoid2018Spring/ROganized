@@ -22,17 +22,17 @@
     <arg name="gui" value="true"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/> 
-    <arg name="world_name" value="$(find team2_gazebo)/worlds/simple_grasp.sdf"/>
+    <arg name="world_name" value="$(find roganized_gazebo)/worlds/simple_grasp.sdf"/>
   </include>
 
   <!-- Spawn Kinect camera model -->
-  <arg name="model" default="$(find team2_gazebo)/urdf/camera.urdf.xacro"/>
+  <arg name="model" default="$(find roganized_gazebo)/urdf/camera.urdf.xacro"/>
   <param name="camera_description" command="$(find xacro)/xacro $(arg model)" />
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
         args="-urdf -x 1.0 -z 1.8 -param camera_description -model camera" />
 
   <!-- RViz -->
-  <arg name="rvizconfig" value="$(find team2_gazebo)/config/camera.rviz"/>
+  <arg name="rvizconfig" value="$(find roganized_gazebo)/config/camera.rviz"/>
   <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(arg rvizconfig)" />
 
 </launch>
