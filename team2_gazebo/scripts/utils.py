@@ -1,11 +1,152 @@
 #!/usr/bin/env python
-import rospy
-from moveit_msgs.msg import MoveItErrorCodes
-from moveit_python import MoveGroupInterface, PlanningSceneInterface,PickPlaceInterface
-from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
 
-# Pick and place objects using the manipulation stack.
-class Robot:
+# Copyright (c) 2015, Fetch Robotics Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Fetch Robotics Inc. nor the names of its
+#       contributors may be used to endorse or promote products derived from
+#       this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL FETCH ROBOTICS INC. BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Michael Ferguson
+
+# Redistributed for ROganize, an open-source project of reinforcement learning
+# at Columbia University. The above disclaimer is preserved per thr original
+# author.
+
+# Author: Yan-Song Chen
+
+import copy
+import actionlib
+import rospy
+
+from math import sin, cos
+from moveit_python import (MoveGroupInterface,
+                           PlanningSceneInterface,
+                           PickPlaceInterface)
+from moveit_python.geometry import rotate_pose_msg_by_euler_angles
+
+from control_msgs.msg import FollowJointTrajectoryAction,\
+                             FollowJointTrajectoryGoal
+from control_msgs.msg import PointHeadAction, PointHeadGoal
+from control_msgs.msg import GripperCommandAction, GripperCommandGoal
+from grasping_msgs.msg import FindGraspableObjectsAction,\
+                              FindGraspableObjectsGoal
+from geometry_msgs.msg import PoseStamped
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from moveit_msgs.msg import PlaceLocation, MoveItErrorCodes
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+# Move base using navigation stack
+class MoveBaseClient(object):
+
+    def __init__(self):
+        self.client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        rospy.loginfo("Waiting for move_base...")
+        self.client.wait_for_server()
+
+    def goto(self, x, y, theta, frame="map"):
+        move_goal = MoveBaseGoal()
+        move_goal.target_pose.pose.position.x = x
+        move_goal.target_pose.pose.position.y = y
+        move_goal.target_pose.pose.orientation.z = sin(theta/2.0)
+        move_goal.target_pose.pose.orientation.w = cos(theta/2.0)
+        move_goal.target_pose.header.frame_id = frame
+        move_goal.target_pose.header.stamp = rospy.Time.now()
+
+        self.client.send_goal(move_goal)
+        self.client.wait_for_result()
+
+# Send a trajectory to controller
+class FollowTrajectoryClient(object):
+
+    def __init__(self, name, joint_names):
+        self.client = actionlib.SimpleActionClient("%s/follow_joint_trajectory"\
+                                                   % name,\
+                                                   FollowJointTrajectoryAction)
+        rospy.loginfo("Waiting for %s..." % name)
+        self.client.wait_for_server()
+        self.joint_names = joint_names
+
+    def move_to(self, positions, duration=5.0):
+        if len(self.joint_names) != len(positions):
+            print("Invalid trajectory position")
+            return False
+        trajectory = JointTrajectory()
+        trajectory.joint_names = self.joint_names
+        trajectory.points.append(JointTrajectoryPoint())
+        trajectory.points[0].positions = positions
+        trajectory.points[0].velocities = [0.0 for _ in positions]
+        trajectory.points[0].accelerations = [0.0 for _ in positions]
+        trajectory.points[0].time_from_start = rospy.Duration(duration)
+        follow_goal = FollowJointTrajectoryGoal()
+        follow_goal.trajectory = trajectory
+
+        self.client.send_goal(follow_goal)
+        self.client.wait_for_result()
+
+class GripperClient(object):
+  def __init__(self):
+    self.client = actionlib.SimpleActionClient("gripper_controller/gripper_action",\
+                                               GripperCommandAction)
+    rospy.loginfo("Waiting for gripper controller")
+    self.client.wait_for_server()
+    self.open = True
+    self.cmd = GripperCommandGoal()
+    self.cmd.command.position = 0.3
+    self.cmd.command.max_effort = 2.0
+    self.client.send_goal(self.cmd)
+    self.client.wait_for_result()
+
+  def toggle(self):
+    if self.open:
+      self.cmd.command.position = 0.0
+    else:
+      self.cmd.command.position = 0.3
+    self.open = not self.open
+    self.client.send_goal(self.cmd)
+    self.client.wait_for_result()
+
+# Point the head using controller
+class PointHeadClient(object):
+
+    def __init__(self):
+        self.client = actionlib.SimpleActionClient("head_controller/point_head"\
+	                                           ,PointHeadAction)
+        rospy.loginfo("Waiting for head_controller...")
+        self.client.wait_for_server()
+
+    def look_at(self, x, y, z, frame, duration=1.0):
+        goal = PointHeadGoal()
+        goal.target.header.stamp = rospy.Time.now()
+        goal.target.header.frame_id = frame
+        goal.target.point.x = x
+        goal.target.point.y = y
+        goal.target.point.z = z
+        goal.min_duration = rospy.Duration(duration)
+        self.client.send_goal(goal)
+        self.client.wait_for_result()
+
+# Tools for grasping
+class GraspingClient(object):
   def __init__(self):
     # Create move group interface for a fetch robot
     self.move_group = MoveGroupInterface('arm_with_torso', 'base_link')
@@ -15,7 +156,7 @@ class Robot:
 
     self.pickplace = PickPlaceInterface("arm", "gripper", verbose=True)
 
-  def moveto(self, pose):
+  def move_gripper(self, pose):
     self.gripper_pose_stamped.header.stamp = rospy.Time.now()
     self.gripper_pose_stamped.pose = pose
     self.move_group.moveToPose(self.gripper_pose_stamped, self.gripper_frame)
@@ -36,24 +177,17 @@ class Robot:
   def cancel(self):
     self.move_group.get_move_action().cancel_all_goals()
 
+
 from gazebo_msgs.msg import ModelStates, ModelState
-from geometry_msgs.msg import Quaternion, Pose, Twist
-class Gazebo:
+from geometry_msgs.msg import Quaternion, Pose, Twist, Point
+class GazeboClient:
   def __init__(self):
-    # gazebo/ModelStates stores object in a list and contains twist
-    # since we do not need twist and desire a constant access to the obejct,
-    # we use a dictionary to store the objects
     self.models = None
     self.sub = rospy.Subscriber('/gazebo/model_states',
                                 ModelStates, self.model_callback)
     self.pub = rospy.Publisher('/gazebo/set_model_state',
                                ModelState, queue_size = 10)
-    self.fixed_models = {'table1', 'table2', 'fetch', 'ground_plane', 'camera'}
-    for i in range(3,0,-1):
-      rospy.loginfo('waiting for callbacks... %i seconds',i)
-      rospy.sleep(1)
-    
-    self.reset()
+    self.fixed_models = {'table', 'fetch', 'ground_plane', 'camera'}
 
   def model_callback(self, msg):
     if self.models is None:
@@ -62,7 +196,7 @@ class Gazebo:
 	if name in self.fixed_models:
 	  pass
 	else:
-          rospy.loginfo("add model name: %s", name)
+          rospy.loginfo("Add model name: %s", name)
           self.models[name] = msg.pose[i]
     else:
       for i, name in enumerate(msg.name):
@@ -71,71 +205,69 @@ class Gazebo:
 	elif name in self.fixed_models:
 	  pass
 	else:
-	  rospy.logerr("model name %s does not exist", name)
+	  rospy.logerr("Model name %s does not exist", name)
 
   def reset(self):
     default_state = ModelState()
     if self.models is None:
       rospy.logerr("models is None")
       return
-    x = 0.0
-    for name, pose in self.models.items():
-      default_state.model_name = name
-      default_state.pose.orientation = Quaternion(0,0,0,0)
-      default_state.pose.position = Point(x, -1.5, 0.0)
-      x += 0.5
-      self.pub.publish(default_state)
-    default_state.model_name='table1'
-    default_state.pose.position = Point(0.8,0.35,-0.08)
-    default_state.pose.orientation = Quaternion(0,0,0,0)
-    self.pub.publish(default_state)
-    default_state.model_name='table2'
-    default_state.pose.position = Point(0.8,-0.35,-0.08)
-    default_state.pose.orientation = Quaternion(0,0,0,0)
-    self.pub.publish(default_state)
+    #default_state.model_name = 'table1'
+    #default_state.pose.orientation = Quaternion(0,0,0,0)
+    #default_state.pose.position = Point(0.8, 0, 0.00)
+    #self.pub.publish(default_state)
 
-  def relocate(self, name, pose):
-    state = ModelState()
-    state.model_name = name
-    state.pose= pose
-    self.pub.publish(state)
 
   def get_pose(self, name):
     return self.models[name]
 
-class RL:
-  def __init__(self):
-    self.locations = [(0.6, 0.2), (0.6,-0.2)]
-    self.index = 3
-  def action(self):
-    self.index = (self.index+1)%2
-    return {'name': 'cricket_ball','x': self.locations[self.index][0],
-            'y': self.locations[self.index][1]}
+  def set_pose(self, state):
+    if state.model_name in self.models:
+      self.pub.publish(state)
+    else:
+      rospy.logerr("Model name %s doesn't exist", state.model_name)
 
-if __name__ == '__main__':
-  rospy.init_node("fetch")
-  fetch = Robot()
-  gazebo = Gazebo()
-  rl = RL()
-  gazebo.reset()
-  gazebo.relocate('cricket_ball',Pose(Point(0.6,0.2,1.0),Quaternion(0,0,0,0)))
-  #gripper_poses = [Pose(Point(0.042, 0.384, 1.826),
-  #                      Quaternion(0.173, -0.693, -0.242, 0.657)),
-  #                 Pose(Point(0.047, 0.545, 1.822),
-  #                      Quaternion(-0.274, -0.701, 0.173, 0.635))]
-  downward = Quaternion(0.0,1.57,0.0,1.57)
-  gripper_pose = Pose(Point(0.7, 0.3, 1.0),downward)
-  while not rospy.is_shutdown():
-    # request action from RL model
-    action = rl.action()
-    print action
-    # grasp target
-    target_pose = gazebo.get_pose(action['name'])
-    target_pose.orientation = downward
-    target_pose.position.z += 0.2
-    fetch.moveto(target_pose)
-    # place target
-    gripper_pose.position.x = action['x']
-    gripper_pose.position.y = action['y']
-    fetch.moveto(gripper_pose)
-  fetch.cancel()
+###############################################################################
+#TODO: REINFORCEMENT LEARNING CODE START HERE
+################################################################################
+import numpy as np
+actions = []
+actions.append({'name':'demo_cube', 'x': 1.2, 'y':  0.25, 'theta': np.pi/6.0})
+actions.append({'name':'demo_cube', 'x': 1.2, 'y': -0.25, 'theta': np.pi/4.0})
+i = -1
+class RL(object):
+  def __init__(self):
+    pass
+
+  def action(self, image = None):
+    action = {}
+    action['name'] = np.random.choice(['bowl','demo_cube','cricket_ball'])
+    action['x'] = np.random.uniform(0.8,1.2)
+    action['y'] = np.random.uniform(-0.25,0.25)
+    action['theta'] = np.pi / np.random.uniform(1.0, 6.0)
+    return action
+################################################################################
+# END OF REINFORCEMENT LEARNING CODE
+################################################################################
+
+###############################################################################
+#TODO: IMAGE PROCESSING CODE START HERE
+################################################################################
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+class ImageSubscriber(object):
+  def __init__(self):
+    pass
+
+  def get_rgb(self):
+    return None
+
+  def get_depth(self):
+    pass
+
+  def save_image(self):
+    pass
+
+################################################################################
+# END OF IMAGE PROCESSING CODE
+################################################################################
