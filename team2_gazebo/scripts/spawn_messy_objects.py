@@ -20,6 +20,7 @@ Spawn and save random object configurations to 'Humanoid-Team2/messy_imgs'.
 '''
 
 models = ModelStates()
+static_objs = ['table1', 'table2', 'camera']
 all_objects = ['bowl',
                'coke_can',
                'cordless_drill',
@@ -28,6 +29,11 @@ all_objects = ['bowl',
                'marble_1_5cm',
                'plastic_cup',
                'parrot_bebop_2']
+MIN_OBJ = 4
+MAX_OBJ = 9
+height = 0.75
+dx = 0.35
+dy = 0.70
 
 
 def random_objects(n, selection=all_objects):
@@ -36,30 +42,36 @@ def random_objects(n, selection=all_objects):
     objs_i.sort()
     return [all_objects[i] for i in objs_i]
 
-# This example shows how to extract model info from gazebo topics
+def gen_rand_pose(name, x, y, z, dx, dy):
+    random_pose = ModelState()
+    random_pose.model_name = name
+    random_pose.pose.orientation = Quaternion(1, .01, 75, 0)
+    random_pose.pose.position.z = z
+    random_pose.pose.position.x = x + np.random.uniform(-dx, dx)
+    random_pose.pose.position.y = y + np.random.uniform(-dy, dy)
+    return random_pose
+
 def model_callback(msg): # TODO: Previous models are unused atm, possible to use to generate organized version?
-    # Get table orientations #TODO: How to avoid doing this each callback? Tables are static.
-    table1_pos = msg.pose[msg.name.index('table1')]
-    table1_x = table1_pos.position.x
-    table1_y = table1_pos.position.y
-    table1_z = table1_pos.position.z
-    table2_pos = msg.pose[msg.name.index('table2')]
-    table2_x = table2_pos.position.x
-    table2_y = table2_pos.position.y
-    table2_z = table2_pos.position.z
-    # height = table1_z
-    height = 0.75  # TODO: get table height, table_z is -0.0002 inside msg.pos
+    # TODO: Get static table orientations once.
+    # TODO: get table height, table_z is -0.0002 inside msg.pos
 
     # Center objects for placement
-    center_x, center_y = (table1_x+table2_x)/2, (table1_y+table2_y)/2
-    dx = dy = max( abs(table2_y - table1_y)/2, abs(table2_x - table1_x)/2 )  # TODO: are the tables square?
-    # print("dx: ", dx)
+    center_x, center_y = 2, 0
 
-    objs = random_objects(np.random.randint(low=4, high=10))
+    # Clear previous objects
+    for o in msg.name:
+        # Skip objects we want to keep in the scene, e.g. tables.
+        if o in static_objs:
+            continue
+        mover = rospy.Publisher('gazebo/set_model_state', ModelState, queue_size=10)
+        random_pose = gen_rand_pose(o, -5, -5, 0, 3, 3)
+        mover.publish(random_pose)
+
+    objs = random_objects(np.random.randint(low=MIN_OBJ, high=MAX_OBJ))
     prev = all_objects[0]
     i = 1
     for o in objs:
-        # Track previous object for naming suffix purposes.
+        # Track which object clone to reference.
         if o == prev:
             i += 1
         else:
@@ -69,32 +81,8 @@ def model_callback(msg): # TODO: Previous models are unused atm, possible to use
         
         # Generate a pos on the table and publish.
         mover = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
-        random_pose = ModelState()
-        random_pose.model_name = o
-        random_pose.pose.orientation = Quaternion(1, .01, 75, 0)
-        random_pose.pose.position.z = height  # height of table
-        random_pose.pose.position.x = center_x + np.random.uniform(-dx, dx)
-        random_pose.pose.position.y = center_y + np.random.uniform(-dy, dy)
+        random_pose = gen_rand_pose(o, center_x, center_y, height, dx, dy)
         mover.publish(random_pose)
-
-
-def shuffle_objects(msg):
-    """Shuffle objects on table. No return."""
-    table_height = msg.pose[msg.find('table')][3]  # Get height of table from message
-    print("height of table: ", table_height)
-
-    for i, model_name in enumerate(msg.name):
-        mover = rospy.Publisher('/gazebo/set_model_state',ModelState, queue_size = 10)
-        random_pose = ModelState()
-        random_pose.model_name = model_name
-        random_pose.pose.orientation = Quaternion(0,0,0,0)
-        random_pose.pose.position.z = table_height  # TODO: check this height is ok
-
-    pass
-
-
-def publish_and_save_new_config():
-    """Push changes to object configuration, and take picture."""
 
 
 def save_img(img, subdir, prefix='scene', suffix='.png'):
@@ -115,22 +103,21 @@ def save_img(img, subdir, prefix='scene', suffix='.png'):
 
 
 class ImageConverter:
-    """Subscribe to image feed and publish to output_image/."""
+    """Subscribe to image feed and publish to img_dir/."""
 
     def __init__(self, img_dir='messy_imgs'):
-        self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=1)
+        self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=10)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.callback)
         self.img_dir = img_dir
 
 
     def callback(self, data):
-
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
             save_img(cv_image, self.img_dir)
             cv2.imshow('image', cv_image)
-            cv2.waitKey(2000)
+            cv2.waitKey(2)
 
         except CvBridgeError as e:
             print(e)
@@ -145,7 +132,7 @@ def main(args):
     # Setup camera for saving images
     ic = ImageConverter(img_dir='messy_imgs')
 
-    r = rospy.Rate(.5) # 1Hz
+    r = rospy.Rate(20) # 1Hz
     while not rospy.is_shutdown():
         # random_pose.pose.position.x = 1 + np.random.uniform(-0.25,0.25)
         # random_pose.pose.position.y = 0.01 + np.random.uniform(-0.75,0.75)
