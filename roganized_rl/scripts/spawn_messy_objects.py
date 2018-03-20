@@ -13,7 +13,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist
 
-roslib.load_manifest('team2_gazebo')
+roslib.load_manifest('roganized_gazebo')
 
 '''
 Spawn and save random object configurations to 'Humanoid-Team2/messy_imgs'.

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>team2_gazebo</name>
+  <name>roganized_gazebo</name>
   <version>0.0.0</version>
-  <description>The team2_gazebo package</description>
+  <description>The simulation environment for project ROganized!</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
