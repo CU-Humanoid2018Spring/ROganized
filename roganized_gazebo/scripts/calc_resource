@@ -1,0 +1,13 @@
+#!/bin/bash
+parent="$(ps --no-headers -C roslaunch --format="pid")"
+children="$(ps --no-headers --ppid $parent --format="pid")"
+cmd='top'
+for child in $children; do cmd="$cmd -p$child"; done
+prog="$(ps --no-headers -C python --format="pid")"
+#cmd="$cmd -p$prog"
+#if [ -z "$prog" ]
+#then
+#echo 'Error: please execute $rosrun roganized_rl training_rl_headless'
+#else
+$cmd
+#fi
