@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+  <!--arg name="ros_port"/-->
+  <!--env name="ROS_MASTER_URI" value="http://localhost:$(arg ros_port)" /-->
+  <arg name="gz_port"/>
+  <env name="GAZEBO_MASTER_URI" value="http://localhost:$(arg gz_port)" />
+  <env name="GAZEBO_MODEL_PATH" value="$(find fetch_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" />
+  <include file="$(find roganized_gazebo)/launch/simple_grasp.launch"/>
+  <node name="train_rl_headless" pkg="roganized_rl" type="train_rl_headless" output="screen"/>
+</launch>
