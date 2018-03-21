@@ -1,25 +1,31 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="controller" default="false" doc="Activate navigation, head movers, arm and gripper?"/>
+  <arg name="display" default="false" doc="Show GUI of gazebo and rviz?"/>
+
+  <group name="control_stack" if="$(arg controller)">
+    <!-- Start MoveIt -->                                                         
+    <include file="$(find fetch_moveit_config)/launch/move_group.launch" > 
+      <arg name="info" value="true"/><!-- publish grasp markers -->
+    </include>
+
+    <!-- Start navigation -->
+    <!--include file="$(find fetch_gazebo_demo)/launch/fetch_nav.launch" /-->
+
+    <!-- Start Perception -->                                                     
+    <node name="basic_grasping_perception" pkg="simple_grasping" type="basic_grasping_perception" >
+      <rosparam command="load" file="$(find fetch_gazebo_demo)/config/simple_grasping.yaml" />
+    </node>
+  </group>
+
+  <!--group ns="11315"-->
   <!-- Import Fetch robot -->
-  <env name="GAZEBO_MODEL_PATH" value="$(find fetch_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" />
   <include file="$(find fetch_gazebo)/launch/include/fetch_pp.launch.xml" />
-
-  <!-- Start MoveIt -->                                                         
-  <include file="$(find fetch_moveit_config)/launch/move_group.launch" > 
-    <arg name="info" value="true"/><!-- publish grasp markers -->
-  </include>
-
-  <!-- Start navigation -->
-  <!--include file="$(find fetch_gazebo_demo)/launch/fetch_nav.launch" /-->
-
-  <!-- Start Perception -->                                                     
-  <node name="basic_grasping_perception" pkg="simple_grasping" type="basic_grasping_perception" >
-    <rosparam command="load" file="$(find fetch_gazebo_demo)/config/simple_grasping.yaml" />
-  </node>
+  <env name="GAZEBO_MODEL_PATH" value="$(find fetch_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" />
 
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
-    <arg name="gui" value="true"/>
+    <arg name="gui" value="$(arg display)"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/> 
     <arg name="world_name" value="$(find roganized_gazebo)/worlds/simple_grasp.sdf"/>
@@ -30,9 +36,11 @@
   <param name="camera_description" command="$(find xacro)/xacro $(arg model)" />
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
         args="-urdf -x 1.0 -z 1.8 -param camera_description -model camera" />
+  <!--/group-->
 
   <!-- RViz -->
-  <arg name="rvizconfig" value="$(find roganized_gazebo)/config/camera.rviz"/>
-  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(arg rvizconfig)" />
-
+  <group name="rviz" if="$(arg display)">
+    <arg name="rvizconfig" value="$(find roganized_gazebo)/config/camera.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" required="false" args="-d $(arg rvizconfig)" />
+  </group>
 </launch>

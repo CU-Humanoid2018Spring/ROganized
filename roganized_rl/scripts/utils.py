@@ -188,6 +188,8 @@ class GazeboClient:
     self.pub = rospy.Publisher('/gazebo/set_model_state',
                                ModelState, queue_size = 10)
     self.fixed_models = {'table', 'fetch', 'ground_plane', 'camera'}
+    while self.models is None:
+      pass
 
   def model_callback(self, msg):
     if self.models is None:
