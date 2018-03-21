@@ -16,24 +16,25 @@ from cv_bridge import CvBridge, CvBridgeError
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist
 
-roslib.load_manifest('roganized_gazebo')
+from utils import ImageSubscriber, GazeboClient, gen_rand_pose
 
+roslib.load_manifest('roganized_rl')
 
 
 models = ModelStates()
-static_objs = ['table', 'fetch', 'ground_plane', 'camera']
-all_objects = sorted(['demo_cube',
+fixed_models = ['table', 'fetch', 'ground_plane', 'camera', 'sun']
+all_objects = sorted(['wood_cube_5cm',
                       'cricket_ball',
                       'hammer',
                       'beer_bottle',
                       'parrot_bebop_2'])
 MIN_OBJ = 4
-MAX_OBJ = 9
-center_x = 0
-center_y = 2
-height = 0.75
+MAX_OBJ = 6
+center_x = 2
+center_y = 0
+height = 0.72
 dx = 0.35
-dy = 0.70
+dy = 0.35
 
 
 def random_objects(n, selection=all_objects):
@@ -43,17 +44,7 @@ def random_objects(n, selection=all_objects):
     return [all_objects[i] for i in objs_i]
 
 
-def gen_rand_pose(name, x, y, z, dx, dy):
-    random_pose = ModelState()
-    random_pose.model_name = name
-    random_pose.pose.orientation = Quaternion(1, .01, 75, 0)
-    random_pose.pose.position.z = z
-    random_pose.pose.position.x = x + np.random.uniform(-dx, dx)
-    random_pose.pose.position.y = y + np.random.uniform(-dy, dy)
-    return random_pose
-
-
-def random_poses(msg, mincount=MIN_OBJ, maxcount=MAX_OBJ):
+def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Return dictionary of {name: pos} for publishing. """
     # TODO: Previous models are unused atm, possible to use to generate organized version?
     # TODO: Get static table orientations once.
@@ -76,24 +67,44 @@ def random_poses(msg, mincount=MIN_OBJ, maxcount=MAX_OBJ):
     return poses
 
 
-# def main(args):
+SCENE_ORGS = {
+    'messy': random_poses,
+    'neat_linear': None,
+    'neat_cluster': None,
+    'neat_equidist': None
+
+}
+
+
+def main(args):
+    try:
+        scene_org = SCENE_ORGS[sys.argv[1]]
+        img_dir = sys.argv[2]
+    except:
+        print ("Usage: scene_generator.py <%s> <img_dir>" % '/'.join(SCENE_ORGS.keys()))
+        exit()
+
+    print("==== %s SCENE GENERATOR SAVING TO data/%s ====" % (sys.argv[1], img_dir))
+    print("Using %s scene generator." % scene_org.__name__)
+
+    rospy.init_node('scene_maker', anonymous=True)
+
+    # Setup GazeboClient
+    gc = GazeboClient(obj_mover=scene_org, min_objs=MIN_OBJ, max_objs=MAX_OBJ,
+                      fixed_models=fixed_models)
+
+    # Setup camera for saving images
+    ic = ImageSubscriber(img_dir=img_dir)
 #
-#     rospy.init_node('model_spawner', anonymous=True)
-#     # model_callback initiates scene generation
-#     rospy.Subscriber('/gazebo/model_states', ModelStates, model_callback, queue_size=1)
-#
-#     # Setup camera for saving images
-#     ic = ImageConverter(img_dir='messy_imgs')
-#
-#     r = rospy.Rate(20) # 1Hz
-#     while not rospy.is_shutdown():
+    r = rospy.Rate(1/.2) # 1Hz
+    while not rospy.is_shutdown():
 #         # random_pose.pose.position.x = 1 + np.random.uniform(-0.25,0.25)
 #         # random_pose.pose.position.y = 0.01 + np.random.uniform(-0.75,0.75)
 #         # cup_mover.publish(random_pose)
-#         r.sleep()
+        r.sleep()
 #
 #     # cv2.destroyAllWindows()
 #
 #
-# if __name__ == '__main__':
-#     main(sys.argv)
+if __name__ == '__main__':
+    main(sys.argv)

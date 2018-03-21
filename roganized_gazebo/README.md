@@ -24,5 +24,6 @@ $ rosrun roganized_gazebo find_object.py
    `$ roslaunch roganized_gazebo camera.launch gui:=true`.
    Otherwise, `roslaunch roganized_gazebo camera.launch`
  
-2. Run `$ rosrun roganized_gazebo spawn_messy_objects.py`, the objects will
-switch places randomly, with each scene saved out to Humanoid-Team2/messy_imgs.
+2. Run `$ rosrun roganized_rl scene_generator.py <scene_type> <img_dir>,`
+where scene_type is messy/neat_linear/neat_equid/neat_cluster, and the program
+will save scene images to data/img_dir.

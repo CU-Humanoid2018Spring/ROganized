@@ -56,7 +56,6 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from moveit_msgs.msg import PlaceLocation, MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-from scene_generators import *
 
 # Move base using navigation stack
 class MoveBaseClient(object):
@@ -180,19 +179,32 @@ class GraspingClient(object):
     def cancel(self):
         self.move_group.get_move_action().cancel_all_goals()
 
+# Tool for resetting object position within a region.
+def gen_rand_pose(name, x, y, z, dx, dy):
+    random_pose = ModelState()
+    random_pose.model_name = name
+    random_pose.pose.orientation = Quaternion(1, .01, 75, 0)
+    random_pose.pose.position.z = z
+    random_pose.pose.position.x = x + np.random.uniform(-dx, dx)
+    random_pose.pose.position.y = y + np.random.uniform(-dy, dy)
+    return random_pose
+
 
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 class GazeboClient:
-    def __init__(self, obj_mover, min_objs=MIN_OBJ, max_objs=MAX_OBJ, ):
+    def __init__(self, obj_mover, min_objs, max_objs,
+                 fixed_models={'table', 'fetch', 'ground_plane', 'camera'}):
         '''Initialize with a mover function to update scene with desired neat/messy algorithm.'''
         self.models = None
         self.sub = rospy.Subscriber('/gazebo/model_states',
                                     ModelStates, self.model_callback)
         self.pub = rospy.Publisher('/gazebo/set_model_state',
                                    ModelState, queue_size = 10)
-        self.fixed_models = {'table', 'fetch', 'ground_plane', 'camera'}
         self.obj_mover = obj_mover  # Function for generating new object position.
+        self.fixed_models = fixed_models
+        self.mincount = min_objs
+        self.maxcount = max_objs
 
     def model_callback(self, msg):
         # Initialize models
@@ -208,22 +220,26 @@ class GazeboClient:
         # Update existing models with new poses
         else:
             self.reset(msg.name)
-            for i, name in enumerate(msg.name):
-                if name in self.models:
-                    self.models[name] = msg.pose[i]
-                elif name in self.fixed_models:
-                    self.models[name] = self.obj_mover(name)
-                else:
-                    rospy.logerr("Model name %s does not exist", name)
+            new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
+            # old_poses = {name: msg.pose[i] for i, name in enumerate(msg.name) if name in self.fixed_models}
+            # self.models = old_poses.update(new_poses)
+            for name, pos in new_poses.items():
+                self.pub.publish(pos)
+            # for i, name in enumerate(msg.name):
+            #     if name in self.models:
+            #         self.models[name] = msg.pose[i]
+            #     elif name in self.fixed_models:
+            #         self.models[name] = self.obj_mover(name)
+            #     else:
+            #         rospy.logerr("Model name %s does not exist", name)
 
     def reset(self, names):
         for o in names:
             # Skip objects we want to keep in the scene, e.g. tables.
             if o in self.fixed_models:
                 continue
-            mover = rospy.Publisher('gazebo/set_model_state', ModelState, queue_size=10)
             random_pose = gen_rand_pose(o, -5, -5, 0, 3, 3)
-            mover.publish(random_pose)
+            self.pub.publish(random_pose)
         # default_state = ModelState()
         # if self.models is None:
         #     rospy.logerr("models is None")
@@ -291,24 +307,31 @@ class ImageSubscriber(object):
         elif os.path.basename(cwd) == 'team2_ws':
             path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
         else:
-            path = cwd
-
-        # Make team2_ws/src/Humanoid-Team2/data if does not already exist.
-        if not os.path.exists(path):
-            os.makedirs(path)
-            print("Making path to ", path)
+            path = data_dir
 
         self.img_dir = os.path.join(path, img_dir)
         self.prefix = prefix
         self.suffix = suffix
 
+        # Make team2_ws/src/Humanoid-Team2/data/img_dir if does not already exist.
+        if not os.path.exists(self.img_dir):
+            os.makedirs(self.img_dir)
+            print("Making path to ", self.img_dir)
+
+
+        print("ImageSubscriber initialized to save to: %s" % self.img_dir)
+
+
     def get_rgb(self):
         return None
+
 
     def get_depth(self):
         pass
 
+
     def save_image(self, data):
+        print("...ImageSubscriber saving image to ", self.img_dir)
         # Callback for capturing and saving image from self.image_sub feed.
         cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         n = len(os.listdir(self.img_dir))

@@ -9,44 +9,13 @@
     </include>
     <include>
       <uri>model://cafe_table</uri>
-      <name>table1</name>
-      <pose>2 -0.35 -0.08 0 0 0</pose>
+      <name>table</name>
+      <pose>2 0 -0.08 0 0 0</pose>
     </include>
-    <include>
-      <uri>model://cafe_table</uri>
-      <name>table2</name>
-      <pose>2 0.35 -0.08 0 0 0</pose>
-    </include>
-    <population name="bowl_population">
-        <model name="bowl">
+    <population name="beer_population">
+        <model name="beer">
             <include>
-                <uri>model://bowl</uri>
-            </include>
-        </model>
-        <pose>-5 -5 0 0.2 0 0.1</pose>
-        <box>
-            <size>2 3 0.01</size>
-        </box>
-        <model_count>9</model_count>
-        <distribution><type>random</type></distribution>
-    </population>
-    <population name="coke_can_population">
-        <model name="coke_can">
-            <include>
-                <uri>model://coke_can</uri>
-            </include>
-        </model>
-        <pose>-5 -5 0 0.2 0 0.1</pose>
-        <box>
-            <size>2 3 0.01</size>
-        </box>
-        <model_count>9</model_count>
-        <distribution><type>random</type></distribution>
-    </population>
-    <population name="cordless_drill_population">
-        <model name="cordless_drill">
-            <include>
-                <uri>model://cordless_drill</uri>
+                <uri>model://beer</uri>
             </include>
         </model>
         <pose>-5 -5 0 0.2 0 0.1</pose>
@@ -82,36 +51,10 @@
         <model_count>9</model_count>
         <distribution><type>random</type></distribution>
     </population>
-    <population name="marble_1_5cm_population">
-        <model name="marble_1_5cm">
+    <population name="wood_cube_5cm_population">
+        <model name="wood_cube_5cm">
             <include>
-                <uri>model://marble_1_5cm</uri>
-            </include>
-        </model>
-        <pose>-5 -5 0 0.2 0 0.1</pose>
-        <box>
-            <size>2 3 0.01</size>
-        </box>
-        <model_count>9</model_count>
-        <distribution><type>random</type></distribution>
-    </population>
-    <population name="marble_1_5cm_population">
-        <model name="marble_1_5cm">
-            <include>
-                <uri>model://marble_1_5cm</uri>
-            </include>
-        </model>
-        <pose>-5 -5 0 0.2 0 0.1</pose>
-        <box>
-            <size>2 3 0.01</size>
-        </box>
-        <model_count>9</model_count>
-        <distribution><type>random</type></distribution>
-    </population>
-    <population name="plastic_cup_population">
-        <model name="plastic_cup">
-            <include>
-                <uri>model://plastic_cup</uri>
+                <uri>model://wood_cube_5cm</uri>
             </include>
         </model>
         <pose>-5 -5 0 0.2 0 0.1</pose>
