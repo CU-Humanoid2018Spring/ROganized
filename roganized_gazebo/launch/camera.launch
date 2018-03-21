@@ -6,7 +6,7 @@
 
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
-    <arg name="gui" value="true"/>
+    <arg name="gui" value="false"/>
     <arg name="use_sim_time" value="true"/> 
     <arg name="world_name" value="$(find roganized_gazebo)/worlds/camera.sdf"/>
   </include>

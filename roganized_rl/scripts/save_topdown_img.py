@@ -8,7 +8,7 @@ import cv2
 import os
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-from spawn_messy_objects import save_img
+from scene_generators import save_img
 
 roslib.load_manifest('roganized_gazebo')
 
