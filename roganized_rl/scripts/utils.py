@@ -179,15 +179,21 @@ class GraspingClient(object):
     def cancel(self):
         self.move_group.get_move_action().cancel_all_goals()
 
-# Tool for resetting object position within a region.
-def gen_rand_pose(name, x, y, z, dx, dy):
+# Create a pose.
+def gen_pose(name, x, y, z):
     random_pose = ModelState()
     random_pose.model_name = name
     random_pose.pose.orientation = Quaternion(1, .01, 75, 0)
     random_pose.pose.position.z = z
-    random_pose.pose.position.x = x + np.random.uniform(-dx, dx)
-    random_pose.pose.position.y = y + np.random.uniform(-dy, dy)
+    random_pose.pose.position.x = x
+    random_pose.pose.position.y = y
     return random_pose
+
+
+# Tool for resetting object position within a region.
+def gen_rand_pose(name, x, y, z, dx, dy):
+    return gen_pose(name, x + np.random.uniform(-dx, dx),
+                    y + np.random.uniform(-dy, dy), z)
 
 
 from gazebo_msgs.msg import ModelStates, ModelState
@@ -285,12 +291,20 @@ class RL(object):
 ###############################################################################
 #TODO: IMAGE PROCESSING CODE START HERE
 ################################################################################
+def same_img(img, ref):
+    """Check if grayscaled images are identical."""
+    identical = (img.shape == ref.shape) and not (np.bitwise_xor(img, ref).any())
+    if identical:
+        print("same image detected")
+    return identical
+
+
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 class ImageSubscriber(object):
     '''Capture images from specified camera feed, saving to specified subdirectory of data/.'''
-    def __init__(self, feed='/camera/rgb/image_raw', img_dir='messy_imgs',
-                 prefix='scene', suffix='.png'):
+    def __init__(self, img_dir, count, feed='/camera/rgb/image_raw', ref_img=None,
+                 batch_size=100, prefix='scene', suffix='.png'):
 
         # CvBridge and subscriber to access images
         self.bridge = CvBridge()
@@ -299,27 +313,42 @@ class ImageSubscriber(object):
         # View image feed via publisher
         # self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=10)
 
-        # Establish directory location for saving images
+        # Setup directory for saving images
         cwd = os.getcwd()
         data_dir = 'data'
+        self.img_dir = img_dir
         if os.path.basename(cwd) == 'Humanoid-Team2':
-            path = os.path.join(os.getcwd(), data_dir)
+            self.data_path = os.path.join(os.getcwd(), data_dir)
         elif os.path.basename(cwd) == 'team2_ws':
-            path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
+            self.data_path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
         else:
-            path = data_dir
+            self.data_path = data_dir
 
-        self.img_dir = os.path.join(path, img_dir)
+        if not os.path.exists(os.path.join(self.data_path, self.img_dir)):
+            os.makedirs(os.path.join(self.data_path, self.img_dir))
+            print("Making path to ", os.path.join(self.data_path, self.img_dir))
+
+        self.batch_num = 0
+        self.batch_size = batch_size
+        # Make team2_ws/src/Humanoid-Team2/data/img_dir/batch_0 if does not already exist.
+        self.update_cur_dir()
+        print("==== CUR_DIR: ", self.cur_dir)
+
+        self.img_count = len(os.listdir(self.cur_dir))
         self.prefix = prefix
         self.suffix = suffix
+        self.count = count
+        self.done = False
+        self.ref_img = cv2.imread(os.path.join(self.data_path, ref_img)) if ref_img else None
 
-        # Make team2_ws/src/Humanoid-Team2/data/img_dir if does not already exist.
-        if not os.path.exists(self.img_dir):
-            os.makedirs(self.img_dir)
-            print("Making path to ", self.img_dir)
+        print("ImageSubscriber initialized to save %x images to: %s" % (self.count, self.img_dir))
 
 
-        print("ImageSubscriber initialized to save to: %s" % self.img_dir)
+    def update_cur_dir(self):
+        self.cur_dir = os.path.join(self.data_path, self.img_dir, "batch_" + str(self.batch_num))
+        if not os.path.exists(self.cur_dir):
+            os.makedirs(self.cur_dir)
+            print("Making path to ", self.cur_dir)
 
 
     def get_rgb(self):
@@ -331,12 +360,21 @@ class ImageSubscriber(object):
 
 
     def save_image(self, data):
-        print("...ImageSubscriber saving image to ", self.img_dir)
         # Callback for capturing and saving image from self.image_sub feed.
         cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        n = len(os.listdir(self.img_dir))
-        img_path = os.path.join(self.img_dir, self.prefix + str(n) + self.suffix)
-        cv2.imwrite(img_path, cv_image)
+        n = len(os.listdir(self.cur_dir))
+        if n > self.count:
+            print("Saved %x images" % self.count)
+            self.done = True
+            return
+        if self.img_count > 1 and n % self.batch_size == 0:
+            self.batch_num += 1
+            self.update_cur_dir()
+        if not same_img(cv_image, self.ref_img):
+            img_path = os.path.join(self.cur_dir, self.prefix + str(self.img_count) + self.suffix)
+            cv2.imwrite(img_path, cv_image)
+            self.img_count += 1
+            print("...ImageSubscriber saved", img_path)
 
 ################################################################################
 # END OF IMAGE PROCESSING CODE
