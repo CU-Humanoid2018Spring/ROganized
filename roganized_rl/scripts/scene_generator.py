@@ -26,6 +26,7 @@ all_objects = sorted(['wood_cube_5cm',
                       'parrot_bebop_2'])
 MIN_OBJ = 4
 MAX_OBJ = 6
+# TODO: all-caps the constants below
 center_x = 2
 center_y = 0
 height = 0.72
@@ -43,9 +44,7 @@ def random_objects(n, selection=all_objects):
 
 def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Return dictionary of {name: pos} for publishing. """
-    # TODO: Previous models are unused atm, possible to use to generate organized version?
-    # TODO: Get static table orientations once.
-    # TODO: get table height, table_z is -0.0002 inside msg.pos
+    # TODO: Get static table orientations once, including height.
     poses = {}
     objs = random_objects(np.random.randint(low=mincount, high=maxcount))
     prev = all_objects[0]
@@ -65,19 +64,27 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
 
 
 def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
-    """Place objects vertically or horizontally at random, in lines."""
-    vert = np.random.random() > 0.5  # Vertical or horizontal
+    """Place objects in vertical or horizontal lines, one type of object per line."""
+    vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
     poses = {}
-    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount)))
-    spacing1 = 2*dx / (2 + len(objs))
-    for i, (name, count) in enumerate(objs.items()):
-        spacing2 = 2*dy / (2 + count)
-        for n in range(count):
-            name += "_clone_" + str(n)
-            a = spacing1 * (i+1)
-            b = spacing2 * (n+1)
-            # Generate a pose on the table and save to dict.
-            poses[name] = gen_pose(name, a if vert else b, b if vert else a, height)
+    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount)))  # objs = {"name": count}
+    # TODO: shuffle objs randomly
+    # Determine spacing along x and y dimensions
+    xdim = 2*dx 
+    ydim = 2*dy
+    line_spacing = (xdim if vert else ydim) / (2 + len(objs))  # Spacing between lines, buffered from table edge
+    # Compute pose per object, per line, and save to poses dict
+    for line_i, (name, count) in enumerate(objs.items()):
+        obj_spacing = (ydim if vert else xdim) / (2 + count)  # Spacing between objects in line, buffered from table edge
+        for obj_i in range(count):
+            name += "_clone_" + str(obj_i)
+            line_pos = spacing1 * (line_i + 1)
+            obj_pos = obj_spacing * (obj_i + 1)
+            # Generate pose and save to dict.
+            poses[name] = gen_pose(name=name, 
+                                   x=line_spacing if vert else obj_spacing, 
+                                   y=obj_spacing if vert else line_spacing, 
+                                   z=height)
     return poses
 
 
