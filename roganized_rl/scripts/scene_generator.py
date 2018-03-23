@@ -138,10 +138,11 @@ SCENE_ORGS = {
 
 
 def main(args):
+  # Usage example: python scene_generator.py neat_cluster clustered 100
     try:
         scene_org = SCENE_ORGS[sys.argv[1]]
         img_dir = sys.argv[2]
-        count = sys.maxint if len(sys.argv) < 3 else int(sys.argv[3])
+        count = 150 if len(sys.argv) < 4 else int(sys.argv[3])
     except:
         print ("Usage: scene_generator.py <%s> <img_dir> <[opt]count>" % '/'.join(SCENE_ORGS.keys()))
         exit()
@@ -158,6 +159,7 @@ def main(args):
     # Setup camera for saving images
     ic = ImageSubscriber(img_dir=img_dir, count=count, ref_img=blank_table)
 
+    # Establish image capture rate
     sec_per_img = 0.1
     r = rospy.Rate(1/sec_per_img) # Hz
     while not rospy.is_shutdown():
