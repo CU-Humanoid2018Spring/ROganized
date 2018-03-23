@@ -99,7 +99,7 @@ def neat_cluster_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
         c_j = count // 2 + count % 2
         c_points = np.mgrid[c_x-c_dx:c_x+c_dx:c_i, c_y-c_dy:c_y+c_dy:c_j].reshape(2, -1).T
         points.append((c_points))
-    for name, count, point_list in zip(objs.items(), points):
+    for (name, count), point_list in zip(objs.items(), points):
         for n, (x, y) in zip(range(count), point_list):
             name += "_clone_" + str(n)
             poses[name] = gen_pose(name, x, y, height)
@@ -111,18 +111,18 @@ def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     poses = {}
     objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount)))
     n = sum([count for count in objs.values()])
-    a = n // 2
-    b = n // 2 + n % 2
-    x_low = center_x-dx
-    x_high = center_x+dx
+    a = n // 2 + 2
+    b = n // 2 + n % 2 + 2
     x_step = 2*dx / a
-    y_step = 2*dy 
-    print("n, i, j: ", n, a, b)
-    points = np.mgrid[center_x-dx:center_x+dx:aj, center_y-dy:center_y+dy:bj].reshape(2, -1).T
+    y_step = 2*dy / b
+    xs = np.arange(center_x - dx + x_step, center_x + dx - x_step, x_step)
+    ys = np.arange(center_y - dy + y_step, center_y + dy - y_step, y_step)
+    X, Y = np.meshgrid(xs, ys)
+    points = np.array([X.flatten(), Y.flatten()]).T
     print("points: ", points)
     print("objs.items: ", objs.items())
 
-    for name, count, (x, y) in zip(objs.items(), points):
+    for (name, count), (x, y) in zip(objs.items(), points):
         name += "_clone_" + str(n)
         poses[name] = gen_pose(name, x, y, height)
     return poses
