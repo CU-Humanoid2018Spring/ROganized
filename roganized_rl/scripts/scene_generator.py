@@ -78,7 +78,7 @@ def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
         obj_spacing = (ydim if vert else xdim) / (2 + count)  # Spacing between objects in line, buffered from table edge
         for obj_i in range(count):
             name += "_clone_" + str(obj_i)
-            line_pos = spacing1 * (line_i + 1)
+            line_pos = line_spacing * (line_i + 1)
             obj_pos = obj_spacing * (obj_i + 1)
             # Generate pose and save to dict.
             poses[name] = gen_pose(name=name, 

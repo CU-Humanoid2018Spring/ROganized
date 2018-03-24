@@ -179,6 +179,10 @@ class GraspingClient(object):
     def cancel(self):
         self.move_group.get_move_action().cancel_all_goals()
 
+# Tools for generating poses
+from gazebo_msgs.msg import ModelStates, ModelState
+from geometry_msgs.msg import Quaternion, Pose, Twist, Point
+
 # Create a pose given name and coordinates, with default orientation.
 def gen_pose(name, x, y, z, orient=Quaternion(1, .01, 75, 0)):
     random_pose = ModelState()
@@ -196,8 +200,6 @@ def gen_rand_pose(name, x, y, z, dx, dy):
                     y + np.random.uniform(-dy, dy), z)
 
 
-from gazebo_msgs.msg import ModelStates, ModelState
-from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 class GazeboClient:
     def __init__(self, obj_mover, min_objs, max_objs,
                  fixed_models={'table', 'fetch', 'ground_plane', 'camera'}):
@@ -214,7 +216,7 @@ class GazeboClient:
         self.fixed_models = fixed_models
         self.mincount = min_objs
         self.maxcount = max_objs
-        
+
 
     def model_callback(self, msg):
         if self.models is None: # Initialize models if not yet done
@@ -230,7 +232,7 @@ class GazeboClient:
             new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
             for name, pos in new_poses.items():
                 self.pub.publish(pos)
-                
+
 
     def reset(self, names):
         for o in names:
@@ -240,10 +242,10 @@ class GazeboClient:
             random_pose = gen_rand_pose(o, -5, -5, 0, 3, 3)
             self.pub.publish(random_pose)
 
-            
+
     def get_pose(self, name):
         return self.models[name]
-      
+
 
     def set_pose(self, state):
         if state.model_name in self.models:
@@ -251,7 +253,7 @@ class GazeboClient:
         else:
             rospy.logerr("Model name %s doesn't exist", state.model_name)
 
-            
+
 ###############################################################################
 #TODO: REINFORCEMENT LEARNING CODE START HERE
 ################################################################################
@@ -290,17 +292,17 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 class ImageSubscriber(object):
     '''Captures images from specified camera feed and saves to specified subdirectory of data/.'''
-    
+
     def __init__(self, img_dir, count, feed='/camera/rgb/image_raw', ref_img=None,
                  batch_size=100, prefix='scene', suffix='.png'):
-      """ 
-        - img_dir: subdirectory of /data to save images to
-        - count: number of images to produce/save
-        - feed: camera feed to subscribe to
-        - ref_img: reference image to ignore when producing images, e.g. scene with a blank table
-        - batch_size: max number of images to save per subdirectory (default 100)
-        - prefix, suffix: image file <prefix>_<number>.<suffix>
-      """
+        """
+          - img_dir: subdirectory of /data to save images to
+          - count: number of images to produce/save
+          - feed: camera feed to subscribe to
+          - ref_img: reference image to ignore when producing images, e.g. scene with a blank table
+          - batch_size: max number of images to save per subdirectory (default 100)
+          - prefix, suffix: image file <prefix>_<number>.<suffix>
+        """
 
         # CvBridge and camera feed subscriber
         self.bridge = CvBridge()
@@ -324,7 +326,7 @@ class ImageSubscriber(object):
         if not os.path.exists(os.path.join(self.data_path, self.img_dir)):
             os.makedirs(os.path.join(self.data_path, self.img_dir))
             print("Making path to ", os.path.join(self.data_path, self.img_dir))
-        
+
         # Make .../img_dir/batch_0 if does not already exist.
         self.batch_num = 0
         self.update_cur_dir()
@@ -341,7 +343,7 @@ class ImageSubscriber(object):
 
 
     def update_cur_dir(self):
-      """Create new directory for next batch of images."""
+        """Create new directory for next batch of images."""
         self.cur_dir = os.path.join(self.data_path, self.img_dir, "batch_" + str(self.batch_num))
         if not os.path.exists(self.cur_dir):
             os.makedirs(self.cur_dir)
@@ -357,7 +359,7 @@ class ImageSubscriber(object):
 
 
     def save_image(self, data):
-        """ 
+        """
         Callback capturing and saving image from self.image_sub feed.
         Saves current image if different from self.ref_img.
         """
@@ -369,7 +371,7 @@ class ImageSubscriber(object):
         if self.img_count > 1 and n % self.batch_size == 0:
             self.batch_num += 1
             self.update_cur_dir()
-        if self.ref_img and not same_img(cv_image, self.ref_img):
+        if not same_img(cv_image, self.ref_img):
             img_path = os.path.join(self.cur_dir, self.prefix + str(self.img_count) + self.suffix)
             cv2.imwrite(img_path, cv_image)
             self.img_count += 1
