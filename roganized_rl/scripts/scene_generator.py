@@ -7,6 +7,7 @@ from __future__ import print_function
 import roslib
 import sys
 import rospy
+import math
 import numpy as np
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist
@@ -46,7 +47,7 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Return dictionary of {name: pos} for publishing. """
     # TODO: Get static table orientations once, including height.
     poses = {}
-    objs = random_objects(np.random.randint(low=mincount, high=maxcount))
+    objs = random_objects(np.random.randint(low=mincount, high=maxcount+1))
     prev = all_objects[0]
     i = 1
     for name in objs:
@@ -67,7 +68,7 @@ def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Place objects in vertical or horizontal lines, one type of object per line."""
     vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
     poses = {}
-    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount)))  # objs = {"name": count}
+    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))  # objs = {"name": count}
     # TODO: shuffle objs randomly
     # Determine spacing along x and y dimensions
     xdim = 2*dx 
@@ -91,7 +92,7 @@ def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
 def neat_cluster_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """ Cluster into 1-5 evenly spaced groupings on table."""
     poses = {}
-    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount)))
+    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))
     clusters = len(objs)
     a = clusters // 2
     b = clusters // 2 + clusters % 2
@@ -113,25 +114,63 @@ def neat_cluster_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     return poses
 
 
-def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
-    """Generate a 2D Linspace organization of objects."""
-    poses = {}
-    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount)))
-    n = sum([count for count in objs.values()])
-    a = n // 2 + 2
-    b = n // 2 + n % 2 + 2
-    x_step = 2*dx / a
-    y_step = 2*dy / b
-    xs = np.arange(center_x - dx + x_step, center_x + dx - x_step, x_step)
-    ys = np.arange(center_y - dy + y_step, center_y + dy - y_step, y_step)
-    X, Y = np.meshgrid(xs, ys)
-    points = np.array([X.flatten(), Y.flatten()]).T
-    print("points: ", points)
-    print("objs.items: ", objs.items())
+# def equidist_2d(n, dx, dy, center_x, center_y):
+#     step1 = 2*dx / (n//2 + 2)
+#     step2 = 2*dy / (n//2 + n%2 + 2)
+#     multiples = np.mgrid[1:3:3j, 1:3:3j].reshape(2, -1).T
+#     displacements = [(step1*m1, step2*m2) for (m1, m2) in multiples]
+#     return [(center_x + x, center_y + y) for (x, y) in displacements]
 
-    for (name, count), (x, y) in zip(objs.items(), points):
+
+def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
+    """Generate a 2D linearly spaced organization of objects."""
+    poses = {}
+    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))
+    vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
+    n = sum([count for count in objs.values()])
+    print("==== number of objs: ", n)
+
+    n = 6
+
+    if n == 4:
+        step1 = 2*dx / 4
+        step2 = 2*dy / 4
+        multiples = [(-1, -1), (1, -1),
+                     (-1, 1), (1, 1)]  # central square
+    elif n == 5:
+        step1 = 2*dx / 4
+        step2 = 2*dy / 5
+        multiples = [(-1, -1), (1, -1),
+                     (0, 0),
+                     (-1, 2), (1, 2)]  # box with center
+    else:
+        step1 = 2*dx / 5
+        step2 = 2*dy / 5
+        multiples = [(-1, -1), (-1, 0), (-1, 2),
+                     (0, -1), (0, 0), (0, 2),
+                     (2, -1), (2, 0), (2, 2)]  # 2x3
+
+    points = [(center_x + mx*step1, center_y + my*step2) for (mx, my) in multiples]
+
+    # a = n//2 + 2
+    # b = n//2 + n%2 + 2
+    # print("a: ", a, " b: ", b)
+    # x_step = 2*dx / a
+    # y_step = 2*dy / b
+    # print("xstep: ", x_step, "ystep: ", y_step)
+    # xs = np.arange(center_x - dx, center_x + dx, x_step)[1:-1]
+    # ys = np.arange(center_y - dy, center_y + dy, y_step)[1:-1]
+    # print('xs', xs)
+    # print('ys', ys)
+    # X, Y = np.meshgrid(xs, ys)
+    # points = np.array([X.flatten(), Y.flatten()]).T
+    print("points:")
+    for p in points:
+        print(p)
+
+    for (name, _), p in zip(objs.items(), points):
         name += "_clone_" + str(n)
-        poses[name] = gen_pose(name, x, y, height)
+        poses[name] = gen_pose(name, p[0], p[1], height)
     return poses
 
 
