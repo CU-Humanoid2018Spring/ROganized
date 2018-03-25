@@ -179,23 +179,34 @@ class GraspingClient(object):
     def cancel(self):
         self.move_group.get_move_action().cancel_all_goals()
 
-# Tool for resetting object position within a region.
-def gen_rand_pose(name, x, y, z, dx, dy):
+# Tools for generating poses
+from gazebo_msgs.msg import ModelStates, ModelState
+from geometry_msgs.msg import Quaternion, Pose, Twist, Point
+
+# Create a pose given name and coordinates, with default orientation.
+def gen_pose(name, x, y, z, orient=Quaternion(1, .01, 75, 0)):
     random_pose = ModelState()
     random_pose.model_name = name
-    random_pose.pose.orientation = Quaternion(1, .01, 75, 0)
+    random_pose.pose.orientation = orient
     random_pose.pose.position.z = z
-    random_pose.pose.position.x = x + np.random.uniform(-dx, dx)
-    random_pose.pose.position.y = y + np.random.uniform(-dy, dy)
+    random_pose.pose.position.x = x
+    random_pose.pose.position.y = y
     return random_pose
 
 
-from gazebo_msgs.msg import ModelStates, ModelState
-from geometry_msgs.msg import Quaternion, Pose, Twist, Point
+# Create random pose within a bounding x and y region.
+def gen_rand_pose(name, x, y, z, dx, dy):
+    return gen_pose(name, x + np.random.uniform(-dx, dx),
+                    y + np.random.uniform(-dy, dy), z)
+
+
 class GazeboClient:
     def __init__(self, obj_mover, min_objs, max_objs,
                  fixed_models={'table', 'fetch', 'ground_plane', 'camera'}):
-        '''Initialize with a mover function to update scene with desired neat/messy algorithm.'''
+        '''Initialize with:
+            - scene generating function, 
+            - interval of objects to produce per scene, and 
+            - [opt] set of fixed models. '''
         self.models = None
         self.sub = rospy.Subscriber('/gazebo/model_states',
                                     ModelStates, self.model_callback)
@@ -206,9 +217,9 @@ class GazeboClient:
         self.mincount = min_objs
         self.maxcount = max_objs
 
+
     def model_callback(self, msg):
-        # Initialize models
-        if self.models is None:
+        if self.models is None: # Initialize models if not yet done
             self.models={}
             for i, name in enumerate(msg.name):
                 if name in self.fixed_models:
@@ -216,22 +227,12 @@ class GazeboClient:
                 else:
                     rospy.loginfo("Add model name: %s", name)
                     self.models[name] = msg.pose[i]
-
-        # Update existing models with new poses
-        else:
+        else: # Otherwise, update existing models with new poses and publish
             self.reset(msg.name)
             new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
-            # old_poses = {name: msg.pose[i] for i, name in enumerate(msg.name) if name in self.fixed_models}
-            # self.models = old_poses.update(new_poses)
             for name, pos in new_poses.items():
                 self.pub.publish(pos)
-            # for i, name in enumerate(msg.name):
-            #     if name in self.models:
-            #         self.models[name] = msg.pose[i]
-            #     elif name in self.fixed_models:
-            #         self.models[name] = self.obj_mover(name)
-            #     else:
-            #         rospy.logerr("Model name %s does not exist", name)
+
 
     def reset(self, names):
         for o in names:
@@ -240,24 +241,18 @@ class GazeboClient:
                 continue
             random_pose = gen_rand_pose(o, -5, -5, 0, 3, 3)
             self.pub.publish(random_pose)
-        # default_state = ModelState()
-        # if self.models is None:
-        #     rospy.logerr("models is None")
-        #     return
-        #default_state.model_name = 'table1'
-        #default_state.pose.orientation = Quaternion(0,0,0,0)
-        #default_state.pose.position = Point(0.8, 0, 0.00)
-        #self.pub.publish(default_state)
 
 
     def get_pose(self, name):
         return self.models[name]
+
 
     def set_pose(self, state):
         if state.model_name in self.models:
             self.pub.publish(state)
         else:
             rospy.logerr("Model name %s doesn't exist", state.model_name)
+
 
 ###############################################################################
 #TODO: REINFORCEMENT LEARNING CODE START HERE
@@ -285,41 +280,74 @@ class RL(object):
 ###############################################################################
 #TODO: IMAGE PROCESSING CODE START HERE
 ################################################################################
+def same_img(img, ref):
+    """Check if cv2 images are identical."""
+    identical = (img.shape == ref.shape) and not (np.bitwise_xor(img, ref).any())
+    if identical:
+        print("same image detected")
+    return identical
+
+
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 class ImageSubscriber(object):
-    '''Capture images from specified camera feed, saving to specified subdirectory of data/.'''
-    def __init__(self, feed='/camera/rgb/image_raw', img_dir='messy_imgs',
-                 prefix='scene', suffix='.png'):
+    '''Captures images from specified camera feed and saves to specified subdirectory of data/.'''
 
-        # CvBridge and subscriber to access images
+    def __init__(self, img_dir, count, feed='/camera/rgb/image_raw', ref_img=None,
+                 batch_size=100, prefix='scene', suffix='.png'):
+        """
+          - img_dir: subdirectory of /data to save images to
+          - count: number of images to produce/save
+          - feed: camera feed to subscribe to
+          - ref_img: reference image to ignore when producing images, e.g. scene with a blank table
+          - batch_size: max number of images to save per subdirectory (default 100)
+          - prefix, suffix: image file <prefix>_<number>.<suffix>
+        """
+
+        # CvBridge and camera feed subscriber
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber(feed, Image, self.save_image)
 
-        # View image feed via publisher
+        # Publisher to view image feed
         # self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=10)
 
-        # Establish directory location for saving images
+        # Setup directory within /data for saving images, using current location. Creates /data if necessary.
         cwd = os.getcwd()
         data_dir = 'data'
+        self.img_dir = img_dir
         if os.path.basename(cwd) == 'Humanoid-Team2':
-            path = os.path.join(os.getcwd(), data_dir)
+            self.data_path = os.path.join(os.getcwd(), data_dir)
         elif os.path.basename(cwd) == 'team2_ws':
-            path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
+            self.data_path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
         else:
-            path = data_dir
+            self.data_path = data_dir
 
-        self.img_dir = os.path.join(path, img_dir)
+        # Make team2_ws/src/Humanoid-Team2/data/<img_dir> if does not exist
+        if not os.path.exists(os.path.join(self.data_path, self.img_dir)):
+            os.makedirs(os.path.join(self.data_path, self.img_dir))
+            print("Making path to ", os.path.join(self.data_path, self.img_dir))
+
+        # Make .../img_dir/batch_0 if does not already exist.
+        self.batch_num = 0
+        self.update_cur_dir()
+        print("==== CUR_DIR: ", self.cur_dir)
+
+        self.img_count = len(os.listdir(self.cur_dir))
+        self.batch_size = batch_size
         self.prefix = prefix
         self.suffix = suffix
+        self.count = count
+        self.ref_img = cv2.imread(os.path.join(self.data_path, ref_img)) if ref_img else None
 
-        # Make team2_ws/src/Humanoid-Team2/data/img_dir if does not already exist.
-        if not os.path.exists(self.img_dir):
-            os.makedirs(self.img_dir)
-            print("Making path to ", self.img_dir)
+        print("ImageSubscriber initialized to save %x images to: %s" % (self.count, self.img_dir))
 
 
-        print("ImageSubscriber initialized to save to: %s" % self.img_dir)
+    def update_cur_dir(self):
+        """Create new directory for next batch of images."""
+        self.cur_dir = os.path.join(self.data_path, self.img_dir, "batch_" + str(self.batch_num))
+        if not os.path.exists(self.cur_dir):
+            os.makedirs(self.cur_dir)
+            print("Making path to ", self.cur_dir)
 
 
     def get_rgb(self):
@@ -331,12 +359,23 @@ class ImageSubscriber(object):
 
 
     def save_image(self, data):
-        print("...ImageSubscriber saving image to ", self.img_dir)
-        # Callback for capturing and saving image from self.image_sub feed.
+        """
+        Callback capturing and saving image from self.image_sub feed.
+        Saves current image if different from self.ref_img.
+        """
         cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        n = len(os.listdir(self.img_dir))
-        img_path = os.path.join(self.img_dir, self.prefix + str(n) + self.suffix)
-        cv2.imwrite(img_path, cv_image)
+        n = len(os.listdir(self.cur_dir))
+        if n > self.count:
+            print("Saved %x images" % self.count)
+            return
+        if self.img_count > 1 and n % self.batch_size == 0:
+            self.batch_num += 1
+            self.update_cur_dir()
+        if not same_img(cv_image, self.ref_img):
+            img_path = os.path.join(self.cur_dir, self.prefix + str(self.img_count) + self.suffix)
+            cv2.imwrite(img_path, cv_image)
+            self.img_count += 1
+            print("...ImageSubscriber saved", img_path)
 
 ################################################################################
 # END OF IMAGE PROCESSING CODE
