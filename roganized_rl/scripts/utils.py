@@ -222,7 +222,7 @@ class GazeboClient:
 
 
     def model_callback(self, msg):
-        if self.models is None and self.simple_client: # Initialize models if not yet done
+        if self.models is None: # Initialize models if not yet done
             self.models={}
             for i, name in enumerate(msg.name):
                 if name in self.fixed_models:
@@ -271,7 +271,7 @@ class GazeboClient:
 
 
     def set_pose(self, state):
-        if state.model_name in self.models:
+        if self.models and state.model_name in self.models:
             self.pub.publish(state)
         else:
             rospy.logerr("Model name %s doesn't exist", state.model_name)
