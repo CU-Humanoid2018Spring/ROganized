@@ -201,12 +201,13 @@ def gen_rand_pose(name, x, y, z, dx, dy):
 
 
 class GazeboClient:
-    def __init__(self, obj_mover, min_objs, max_objs,
+    def __init__(self, obj_mover=None, min_objs=None, max_objs=None,
                  fixed_models={'table', 'fetch', 'ground_plane', 'camera'}):
-        '''Initialize with:
+        '''Option to initialize with:
             - scene generating function, 
             - interval of objects to produce per scene, and 
             - [opt] set of fixed models. '''
+
         self.models = None
         self.sub = rospy.Subscriber('/gazebo/model_states',
                                     ModelStates, self.model_callback)
@@ -214,12 +215,14 @@ class GazeboClient:
                                    ModelState, queue_size = 10)
         self.obj_mover = obj_mover  # Function for generating new object position.
         self.fixed_models = fixed_models
+
+        self.simple_client = (obj_mover == None)
         self.mincount = min_objs
         self.maxcount = max_objs
 
 
     def model_callback(self, msg):
-        if self.models is None: # Initialize models if not yet done
+        if self.models is None and self.simple_client: # Initialize models if not yet done
             self.models={}
             for i, name in enumerate(msg.name):
                 if name in self.fixed_models:
@@ -227,14 +230,34 @@ class GazeboClient:
                 else:
                     rospy.loginfo("Add model name: %s", name)
                     self.models[name] = msg.pose[i]
+
+        elif self.simple_client:
+            for i, name in enumerate(msg.name):
+                if name in self.models:
+                    self.models[name] = msg.pose[i]
+                elif name in self.fixed_models:
+                    pass
+                else:
+                    rospy.logerr("Model name %s does not exist", name)
+
         else: # Otherwise, update existing models with new poses and publish
-            self.reset(msg.name)
+            self.mover_reset(msg.name)
             new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
             for name, pos in new_poses.items():
                 self.pub.publish(pos)
 
+    def reset(self):
+        default_state = ModelState()
+        if self.models is None:
+            rospy.logerr("models is None")
+            return
+        # default_state.model_name = 'table'
+        # default_state.pose.orientation = Quaternion(0,0,0,0)
+        # default_state.pose.position = Point(0.8, 0, 0.00)
 
-    def reset(self, names):
+        # self.pub.publish(default_state)
+
+    def mover_reset(self, names):
         for o in names:
             # Skip objects we want to keep in the scene, e.g. tables.
             if o in self.fixed_models:
@@ -293,7 +316,7 @@ from cv_bridge import CvBridge, CvBridgeError
 class ImageSubscriber(object):
     '''Captures images from specified camera feed and saves to specified subdirectory of data/.'''
 
-    def __init__(self, img_dir, count, feed='/camera/rgb/image_raw', ref_img=None,
+    def __init__(self, img_dir=None, count=None, feed='/camera/rgb/image_raw', ref_img=None,
                  batch_size=100, prefix='scene', suffix='.png'):
         """
           - img_dir: subdirectory of /data to save images to
@@ -303,6 +326,10 @@ class ImageSubscriber(object):
           - batch_size: max number of images to save per subdirectory (default 100)
           - prefix, suffix: image file <prefix>_<number>.<suffix>
         """
+
+        self.simple_subscriber = img_dir==None
+        if self.simple_subscriber:
+            return
 
         # CvBridge and camera feed subscriber
         self.bridge = CvBridge()
@@ -363,6 +390,11 @@ class ImageSubscriber(object):
         Callback capturing and saving image from self.image_sub feed.
         Saves current image if different from self.ref_img.
         """
+
+        # Do nothing if simple
+        if self.simple_subscriber:
+            return
+
         cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         n = len(os.listdir(self.cur_dir))
         if n > self.count:
