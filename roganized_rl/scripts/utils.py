@@ -220,9 +220,11 @@ class GazeboClient:
         self.mincount = min_objs
         self.maxcount = max_objs
         self.stable = False
+        self.msg = None
 
 
     def model_callback(self, msg):
+        self.msg = msg
         if self.models is None: # Initialize models if not yet done
             self.models={}
             for i, name in enumerate(msg.name):
@@ -231,8 +233,8 @@ class GazeboClient:
                 else:
                     rospy.loginfo("Add model name: %s", name)
                     self.models[name] = msg.pose[i]
-
-        elif self.simple_client:
+        else:
+            # Update stability
             self.stable = True
             for i, name in enumerate(msg.name):
                 if name in self.models:
@@ -240,7 +242,7 @@ class GazeboClient:
                     diff += abs(self.models[name].position.x-msg.pose[i].position.x)
                     diff += abs(self.models[name].position.y-msg.pose[i].position.y)
                     diff += abs(self.models[name].position.z-msg.pose[i].position.z)
-                    self.stable = (diff < 1e-8) and self.stable 
+                    self.stable = (diff < 1e-8) and self.stable
                     #print (name+' stable?',self.stable)
                     self.models[name] = msg.pose[i]
                 elif name in self.fixed_models:
@@ -248,8 +250,13 @@ class GazeboClient:
                 else:
                     rospy.logerr("Model name %s does not exist", name)
 
-        else: # Otherwise, update existing models with new poses and publish
-            self.mover_reset(msg.name)
+    def reset_scene(self):
+        """Replace objects in scene to corner."""
+        self.mover_reset(self.msg.name)
+
+
+    def generate_scene(self):
+        # Update existing models with new poses and publish
             new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
             for name, pos in new_poses.items():
                 self.pub.publish(pos)
@@ -337,6 +344,7 @@ class ImageSubscriber(object):
           - prefix, suffix: image file <prefix>_<number>.<suffix>
         """
 
+        self.msg = None
         self.simple_subscriber = img_dir==None
         if self.simple_subscriber:
             return
@@ -393,6 +401,10 @@ class ImageSubscriber(object):
 
     def get_depth(self):
         pass
+
+
+    def callback_function(self, msg):
+        self.msg = msg
 
 
     def save_image(self, data):
