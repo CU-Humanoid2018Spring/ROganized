@@ -39,6 +39,9 @@ if __name__ == "__main__":
   # downward = Quaternion(0.0,1.57,0.0,1.57)
 
   rospy.loginfo("Begin learning...")
+  count = 100
+  import time
+  start_time = time.time()
   while not rospy.is_shutdown():
     image = image_sub.get_rgb()
     rl_action = rl_model.action(image)
@@ -50,6 +53,12 @@ if __name__ == "__main__":
     gazebo_client.set_pose(new_state)
 
     # Wait for the physics to stabilize
-    rospy.sleep(0.2)
-
+    #while not gazebo_client.is_stable():
+    #  pass
+    rospy.sleep(0.1)
+    count -= 1
+    if count == 0:
+      break;
+  end_time = time.time()
+  print ("100 iteration in %s seconds" %(end_time - start_time))
   grasping_client.cancel()

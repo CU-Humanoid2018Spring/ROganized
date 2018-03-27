@@ -219,6 +219,7 @@ class GazeboClient:
         self.simple_client = (obj_mover == None)
         self.mincount = min_objs
         self.maxcount = max_objs
+        self.stable = False
 
 
     def model_callback(self, msg):
@@ -232,8 +233,15 @@ class GazeboClient:
                     self.models[name] = msg.pose[i]
 
         elif self.simple_client:
+            self.stable = True
             for i, name in enumerate(msg.name):
                 if name in self.models:
+                    diff = 0.0
+                    diff += abs(self.models[name].position.x-msg.pose[i].position.x)
+                    diff += abs(self.models[name].position.y-msg.pose[i].position.y)
+                    diff += abs(self.models[name].position.z-msg.pose[i].position.z)
+                    self.stable = (diff < 1e-8) and self.stable 
+                    #print (name+' stable?',self.stable)
                     self.models[name] = msg.pose[i]
                 elif name in self.fixed_models:
                     pass
@@ -276,6 +284,8 @@ class GazeboClient:
         else:
             rospy.logerr("Model name %s doesn't exist", state.model_name)
 
+    def is_stable(self):
+        return self.stable
 
 ###############################################################################
 #TODO: REINFORCEMENT LEARNING CODE START HERE
