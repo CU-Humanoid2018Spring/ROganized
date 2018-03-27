@@ -3,7 +3,7 @@
   <arg name="controller" default="false" doc="Activate navigation, head movers, arm and gripper?"/>
   <arg name="display" default="false" doc="Show GUI of gazebo and rviz?"/>
 
-  <group name="control_stack" if="$(arg controller)">
+  <group if="$(arg controller)">
     <!-- Start MoveIt -->                                                         
     <include file="$(find fetch_moveit_config)/launch/move_group.launch" > 
       <arg name="info" value="true"/><!-- publish grasp markers -->
@@ -21,7 +21,8 @@
   <!--group ns="11315"-->
   <!-- Import Fetch robot -->
   <include file="$(find fetch_gazebo)/launch/include/fetch_pp.launch.xml" />
-  <env name="GAZEBO_MODEL_PATH" value="$(find fetch_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" />
+  <!--env name="GAZEBO_MODEL_PATH" value="$(find fetch_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" /-->
+  <env name="GAZEBO_MODEL_PATH" value="$(find fetch_gazebo)/models:$(find roganized_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" />
 
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
@@ -39,7 +40,7 @@
   <!--/group-->
 
   <!-- RViz -->
-  <group name="rviz" if="$(arg display)">
+  <group if="$(arg display)">
     <arg name="rvizconfig" value="$(find roganized_gazebo)/config/camera.rviz"/>
     <node name="rviz" pkg="rviz" type="rviz" required="false" args="-d $(arg rvizconfig)" />
   </group>

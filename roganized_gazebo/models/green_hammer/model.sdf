@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="green_hammer">
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://hammer/meshes/hammer.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://hammer/meshes/hammer.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0 1 0 0.5</ambient>
+          <!--diffuse>1 0 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <emissive>0 0 0 0</emissive-->
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
