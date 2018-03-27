@@ -26,8 +26,8 @@ all_objects = sorted(['wood_cube_5cm',
 MIN_OBJ = 4
 MAX_OBJ = 6
 # TODO: all-caps the constants below
-center_x = 2
-center_y = 0
+center_x = 2.1
+center_y = .15
 height = 0.72
 dx = .6
 dy = .6
