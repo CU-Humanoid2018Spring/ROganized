@@ -65,7 +65,6 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
 def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Place objects in vertical or horizontal lines, one type of object per line."""
     vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
-    vert = True
     print("==== neat_linear %s" % 'vert' if vert else 'not vert')
     poses = {}
     objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))  # objs = {"name": count}
@@ -106,73 +105,48 @@ def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     return poses
 
 
-def neat_cluster_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
-    """ Cluster into 1-5 evenly spaced groupings on table."""
-    poses = {}
-    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))
-    clusters = len(objs)
-    a = clusters // 2
-    b = clusters // 2 + clusters % 2
-    centroids = np.mgrid[center_x-dx:center_x+dx:a, center_y-dy:center_y+dy:b].reshape(2, -1).T
-    c_dx = dx / a
-    c_dy = dy / b
-    points = []
-
-    for centroid, (name, count) in zip(centroids, objs.items()):
-        c_x, c_y = centroid[0], centroid[1]
-        c_i = count // 2
-        c_j = count // 2 + count % 2
-        c_points = np.mgrid[c_x-c_dx:c_x+c_dx:c_i, c_y-c_dy:c_y+c_dy:c_j].reshape(2, -1).T
-        points.append((c_points))
-    for (name, count), point_list in zip(objs.items(), points):
-        for n, (x, y) in zip(range(count), point_list):
-            name += "_clone_" + str(n)
-            poses[name] = gen_pose(name, x, y, height)
-    return poses
-
-
 def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Generate a 2D linearly spaced organization of objects."""
     poses = {}
     objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))
     vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
+
+    # Determine dimension orientation
+    d1 = dx if vert else dy
+    d2 = dy if vert else dx
+
     n = sum([count for count in objs.values()])
-    print("==== number of objs: ", n)
+    print("==== neat_equidist %s, with %x objs" %('vert' if vert else 'not vert', n))
 
-    n = 6
-
+    # Case match number of objects to list of positions
     if n == 4:
-        step1 = 2*dx / 4
-        step2 = 2*dy / 4
+        step1 = 2*d1 / 4
+        step2 = 2*d2 / 4
         multiples = [(-1, -1), (1, -1),
                      (-1, 1), (1, 1)]  # central square
     elif n == 5:
-        step1 = 2*dx / 4
-        step2 = 2*dy / 5
+        step1 = 2*d1 / 4
+        step2 = 2*d2 / 5
         multiples = [(-1, -1), (1, -1),
                      (0, 0),
                      (-1, 2), (1, 2)]  # box with center
     else:
-        step1 = 2*dx / 5
-        step2 = 2*dy / 5
+        step1 = 2*d1 / 5
+        step2 = 2*d2 / 5
         multiples = [(-1, -1), (-1, 0), (-1, 2),
                      (0, -1), (0, 0), (0, 2),
                      (2, -1), (2, 0), (2, 2)]  # 2x3
 
-    points = [(center_x + mx*step1, center_y + my*step2) for (mx, my) in multiples]
+    # Scale multiples to fit table
+    multiples = [(0.5*a, 0.5*b) for a, b in multiples]
 
-    # a = n//2 + 2
-    # b = n//2 + n%2 + 2
-    # print("a: ", a, " b: ", b)
-    # x_step = 2*dx / a
-    # y_step = 2*dy / b
-    # print("xstep: ", x_step, "ystep: ", y_step)
-    # xs = np.arange(center_x - dx, center_x + dx, x_step)[1:-1]
-    # ys = np.arange(center_y - dy, center_y + dy, y_step)[1:-1]
-    # print('xs', xs)
-    # print('ys', ys)
-    # X, Y = np.meshgrid(xs, ys)
-    # points = np.array([X.flatten(), Y.flatten()]).T
+    # Assign spacing multiples and step size according to vert value
+    if not vert:
+        multiples = [(mx, my) for my, mx in multiples]
+    stepx, stepy = (step1, step2) if vert else (step2, step1)
+
+    points = [(center_x + mx*stepx, center_y + my*stepy) for (mx, my) in multiples]
+
     print("points:")
     for p in points:
         print(p)
@@ -185,12 +159,77 @@ def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     return poses
 
 
+def neat_cluster_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
+    """Cluster objects into 1-5 evenly spaced groupings on table."""
+    poses = {}
+    objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))
+    vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
+
+    # Determine dimension orientation
+    d1 = dx if vert else dy
+    d2 = dy if vert else dx
+
+    clusters = len(objs)
+    print("==== neat_equidist %s, with %x object types" %('vert' if vert else 'not vert', clusters))
+
+    # Case match number of objects to list of positions
+    if clusters == 1:
+        step1 = 2*d1 / 3
+        step2 = 2*d2 / 3
+        multiples = [(1, 1)]  # center
+    if clusters == 2:
+        step1 = 0
+        step2 = 2*d2 / 4
+        multiples = [(-1, 1), (1, 1)]  # line
+    if clusters == 3:
+        step1 = 2*d1 / 3
+        step2 = 2*d2 / 4
+        multiples = [(1, -1), (-1, 1), (1, 1)]  # central triangle
+    if clusters == 4:
+        step1 = 2*d1 / 4
+        step2 = 2*d2 / 4
+        multiples = [(-1, -1), (1, -1),
+                     (-1, 1), (1, 1)]  # central square
+    elif clusters == 5:
+        step1 = 2*d1 / 4
+        step2 = 2*d2 / 5
+        multiples = [(-1, -1), (1, -1),
+                     (0, 0),
+                     (-1, 2), (1, 2)]  # box with center
+    else:
+        step1 = 2*d1 / 5
+        step2 = 2*d2 / 5
+        multiples = [(-1, -1), (-1, 0), (-1, 2),
+                     (0, -1), (0, 0), (0, 2),
+                     (2, -1), (2, 0), (2, 2)]  # 2x3
+
+    # Scale multiples to fit table
+    multiples = [(0.5*a, 0.5*b) for a, b in multiples]
+
+    # Assign spacing multiples and step size according to vert value
+    if not vert:
+        multiples = [(mx, my) for my, mx in multiples]
+    stepx, stepy = (step1, step2) if vert else (step2, step1)
+
+    points = [(center_x + mx*stepx, center_y + my*stepy) for (mx, my) in multiples]
+
+    print("points:")
+    for p in points:
+        print(p)
+
+    for (name, _), p in zip(objs.items(), points):
+        name += "_clone_" + str(clusters)
+        poses[name] = gen_pose(name, p[0], p[1], height)
+
+    print(poses)
+    return poses
+
+
 SCENE_ORGS = {
     'messy': random_poses,
     'neat_linear': neat_linear_poses,
     'neat_cluster': neat_cluster_poses,
     'neat_equidist': neat_equidist_poses
-
 }
 
 
