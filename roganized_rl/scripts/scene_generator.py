@@ -7,10 +7,8 @@ from __future__ import print_function
 import roslib
 import sys
 import rospy
-import math
 import numpy as np
-from gazebo_msgs.msg import ModelStates, ModelState
-from geometry_msgs.msg import Quaternion, Pose, Twist
+from gazebo_msgs.msg import ModelStates
 from collections import Counter
 
 from utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
@@ -31,13 +29,13 @@ MAX_OBJ = 6
 center_x = 2
 center_y = 0
 height = 0.72
-dx = 0.35
-dy = 0.35
+dx = .6
+dy = .6
 blank_table = "blank-table.png"
 
 
 def random_objects(n, selection=all_objects):
-    """Return n random sorted model names from the available desk objects. """
+    """Return n random sorted model names from the available desk objTwistects. """
     objs_i = np.random.choice(range(len(selection)), size=n, replace=True)
     objs_i.sort()
     return [all_objects[i] for i in objs_i]
@@ -67,25 +65,44 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
 def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Place objects in vertical or horizontal lines, one type of object per line."""
     vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
+    vert = True
+    print("==== neat_linear %s" % 'vert' if vert else 'not vert')
     poses = {}
     objs = Counter(random_objects(np.random.randint(low=mincount, high=maxcount+1)))  # objs = {"name": count}
-    # TODO: shuffle objs randomly
-    # Determine spacing along x and y dimensions
-    xdim = 2*dx 
-    ydim = 2*dy
-    line_spacing = (xdim if vert else ydim) / (2 + len(objs))  # Spacing between lines, buffered from table edge
-    # Compute pose per object, per line, and save to poses dict
+    # TODO: shuffle obj-type order
+
+    ### Determine pose per object, per line
+    center_1, center_2 = (center_x, center_y) if vert else (center_y, center_x)
+    d1 = dx if vert else dy
+    d2 = dy if vert else dx
+
+    # Spacing between lines, buffered from table edge
+    line_spacing = 2*d1 / (2 + len(objs))
+    line_poses = np.arange(-d1+center_1, d1+center_1, line_spacing)[1:-1]
+
     for line_i, (name, count) in enumerate(objs.items()):
-        obj_spacing = (ydim if vert else xdim) / (2 + count)  # Spacing between objects in line, buffered from table edge
+
+        # Position of this line of objects
+        line_pos = line_poses[line_i]
+
+        # Spacing between objects along this line, buffered from table edge
+        obj_spacing = 2*d2 / (2 + count)
+        obj_poses = np.arange(-d2+center_2, d2+center_2, obj_spacing)[1:-1]
+
         for obj_i in range(count):
-            name += "_clone_" + str(obj_i)
-            line_pos = line_spacing * (line_i + 1)
-            obj_pos = obj_spacing * (obj_i + 1)
+
+            # Clone's name
+            obj_name = name + "_clone_" + str(obj_i)
+
+            # Spacing of clone along the line
+            obj_pos = obj_poses[obj_i]
+
             # Generate pose and save to dict.
-            poses[name] = gen_pose(name=name, 
-                                   x=line_spacing if vert else obj_spacing, 
-                                   y=obj_spacing if vert else line_spacing, 
+            poses[obj_name] = gen_pose(name=obj_name,
+                                   x=line_pos if vert else obj_pos,
+                                   y=obj_pos if vert else line_pos,
                                    z=height)
+    print(poses)
     return poses
 
 
@@ -112,14 +129,6 @@ def neat_cluster_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
             name += "_clone_" + str(n)
             poses[name] = gen_pose(name, x, y, height)
     return poses
-
-
-# def equidist_2d(n, dx, dy, center_x, center_y):
-#     step1 = 2*dx / (n//2 + 2)
-#     step2 = 2*dy / (n//2 + n%2 + 2)
-#     multiples = np.mgrid[1:3:3j, 1:3:3j].reshape(2, -1).T
-#     displacements = [(step1*m1, step2*m2) for (m1, m2) in multiples]
-#     return [(center_x + x, center_y + y) for (x, y) in displacements]
 
 
 def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
@@ -171,6 +180,8 @@ def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     for (name, _), p in zip(objs.items(), points):
         name += "_clone_" + str(n)
         poses[name] = gen_pose(name, p[0], p[1], height)
+
+    print(poses)
     return poses
 
 
