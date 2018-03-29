@@ -69,13 +69,14 @@ class MoveBaseClient(object):
         move_goal = MoveBaseGoal()
         move_goal.target_pose.pose.position.x = x
         move_goal.target_pose.pose.position.y = y
-        move_goal.target_pose.pose.orientation.z = sin(theta/2.0)
-        move_goal.target_pose.pose.orientation.w = cos(theta/2.0)
+        move_goal.target_pose.pose.orientation.z = sin(theta / 2.0)
+        move_goal.target_pose.pose.orientation.w = cos(theta / 2.0)
         move_goal.target_pose.header.frame_id = frame
         move_goal.target_pose.header.stamp = rospy.Time.now()
 
         self.client.send_goal(move_goal)
         self.client.wait_for_result()
+
 
 # Send a trajectory to controller
 class FollowTrajectoryClient(object):
@@ -105,6 +106,7 @@ class FollowTrajectoryClient(object):
         self.client.send_goal(follow_goal)
         self.client.wait_for_result()
 
+
 class GripperClient(object):
     def __init__(self):
         self.client = actionlib.SimpleActionClient("gripper_controller/gripper_action", \
@@ -127,12 +129,13 @@ class GripperClient(object):
         self.client.send_goal(self.cmd)
         self.client.wait_for_result()
 
+
 # Point the head using controller
 class PointHeadClient(object):
 
     def __init__(self):
         self.client = actionlib.SimpleActionClient("head_controller/point_head" \
-                                                   ,PointHeadAction)
+                                                   , PointHeadAction)
         rospy.loginfo("Waiting for head_controller...")
         self.client.wait_for_server()
 
@@ -146,6 +149,7 @@ class PointHeadClient(object):
         goal.min_duration = rospy.Duration(duration)
         self.client.send_goal(goal)
         self.client.wait_for_result()
+
 
 # Tools for grasping
 class GraspingClient(object):
@@ -179,9 +183,11 @@ class GraspingClient(object):
     def cancel(self):
         self.move_group.get_move_action().cancel_all_goals()
 
+
 # Tools for generating poses
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
+
 
 # Create a pose given name and coordinates, with default orientation.
 def gen_pose(name, x, y, z, orient=Quaternion(1, .01, 75, 0)):
@@ -212,7 +218,7 @@ class GazeboClient:
         self.sub = rospy.Subscriber('/gazebo/model_states',
                                     ModelStates, self.model_callback)
         self.pub = rospy.Publisher('/gazebo/set_model_state',
-                                   ModelState, queue_size = 10)
+                                   ModelState, queue_size=10)
         self.obj_mover = obj_mover  # Function for generating new object position.
         self.fixed_models = fixed_models
 
@@ -222,11 +228,10 @@ class GazeboClient:
         self.stable = False
         self.msg = None
 
-
     def model_callback(self, msg):
         self.msg = msg
-        if self.models is None: # Initialize models if not yet done
-            self.models={}
+        if self.models is None:  # Initialize models if not yet done
+            self.models = {}
             for i, name in enumerate(msg.name):
                 if name in self.fixed_models:
                     pass
@@ -239,27 +244,23 @@ class GazeboClient:
             for i, name in enumerate(msg.name):
                 if name in self.models:
                     diff = 0.0
-                    diff += abs(self.models[name].position.x-msg.pose[i].position.x)
-                    diff += abs(self.models[name].position.y-msg.pose[i].position.y)
-                    diff += abs(self.models[name].position.z-msg.pose[i].position.z)
+                    diff += abs(self.models[name].position.x - msg.pose[i].position.x)
+                    diff += abs(self.models[name].position.y - msg.pose[i].position.y)
+                    diff += abs(self.models[name].position.z - msg.pose[i].position.z)
                     self.stable = (diff < 1e-8) and self.stable
-                    #print (name+' stable?',self.stable)
+                    # print (name+' stable?',self.stable)
                     self.models[name] = msg.pose[i]
                 elif name in self.fixed_models:
                     pass
                 else:
                     rospy.logerr("Model name %s does not exist", name)
 
-    def reset_scene(self):
-        """Replace objects in scene to corner."""
-        self.mover_reset(self.msg.name)
-
 
     def generate_scene(self):
         # Update existing models with new poses and publish
-            new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
-            for name, pos in new_poses.items():
-                self.pub.publish(pos)
+        new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
+        for name, pos in new_poses.items():
+            self.pub.publish(pos)
 
     def reset(self):
         default_state = ModelState()
@@ -272,18 +273,19 @@ class GazeboClient:
 
         # self.pub.publish(default_state)
 
-    def mover_reset(self, names):
-        for o in names:
+    def mover_reset(self):
+        """Replace objects in scene to corner."""
+        if not self.msg:
+            return
+        for o in self.msg.name:
             # Skip objects we want to keep in the scene, e.g. tables.
             if o in self.fixed_models:
                 continue
             random_pose = gen_rand_pose(o, -5, -5, 0, 3, 3)
             self.pub.publish(random_pose)
 
-
     def get_pose(self, name):
         return self.models[name]
-
 
     def set_pose(self, state):
         if self.models and state.model_name in self.models:
@@ -294,31 +296,37 @@ class GazeboClient:
     def is_stable(self):
         return self.stable
 
+
 ###############################################################################
-#TODO: REINFORCEMENT LEARNING CODE START HERE
+# TODO: REINFORCEMENT LEARNING CODE START HERE
 ################################################################################
 import numpy as np
+
 actions = []
-actions.append({'name':'demo_cube', 'x': 1.2, 'y':  0.25, 'theta': np.pi/6.0})
-actions.append({'name':'demo_cube', 'x': 1.2, 'y': -0.25, 'theta': np.pi/4.0})
+actions.append({'name': 'demo_cube', 'x': 1.2, 'y': 0.25, 'theta': np.pi / 6.0})
+actions.append({'name': 'demo_cube', 'x': 1.2, 'y': -0.25, 'theta': np.pi / 4.0})
 i = -1
+
+
 class RL(object):
     def __init__(self):
         pass
 
-    def action(self, image = None):
+    def action(self, image=None):
         action = {}
-        action['name'] = np.random.choice(['bowl','demo_cube','cricket_ball'])
-        action['x'] = np.random.uniform(0.8,1.2)
-        action['y'] = np.random.uniform(-0.25,0.25)
+        action['name'] = np.random.choice(['bowl', 'demo_cube', 'cricket_ball'])
+        action['x'] = np.random.uniform(0.8, 1.2)
+        action['y'] = np.random.uniform(-0.25, 0.25)
         action['theta'] = np.pi / np.random.uniform(1.0, 6.0)
         return action
+
+
 ################################################################################
 # END OF REINFORCEMENT LEARNING CODE
 ################################################################################
 
 ###############################################################################
-#TODO: IMAGE PROCESSING CODE START HERE
+# TODO: IMAGE PROCESSING CODE START HERE
 ################################################################################
 def same_img(img, ref):
     """Check if cv2 images are identical."""
@@ -330,10 +338,12 @@ def same_img(img, ref):
 
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+
+
 class ImageSubscriber(object):
     '''Captures images from specified camera feed and saves to specified subdirectory of data/.'''
 
-    def __init__(self, img_dir=None, count=None, feed='/camera/rgb/image_raw', ref_img=None,
+    def __init__(self, img_dir=None, feed='/camera/rgb/image_raw', ref_imgs=None,
                  batch_size=100, prefix='scene', suffix='.png'):
         """
           - img_dir: subdirectory of /data to save images to
@@ -345,13 +355,13 @@ class ImageSubscriber(object):
         """
 
         self.msg = None
-        self.simple_subscriber = img_dir==None
+        self.simple_subscriber = img_dir == None
         if self.simple_subscriber:
             return
 
         # CvBridge and camera feed subscriber
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber(feed, Image, self.save_image)
+        self.image_sub = rospy.Subscriber(feed, Image, self.callback_function)
 
         # Publisher to view image feed
         # self.image_pub = rospy.Publisher("/team2/output_image", Image, queue_size=10)
@@ -381,11 +391,10 @@ class ImageSubscriber(object):
         self.batch_size = batch_size
         self.prefix = prefix
         self.suffix = suffix
-        self.count = count
-        self.ref_img = cv2.imread(os.path.join(self.data_path, ref_img)) if ref_img else None
+        self.ref_imgs = [cv2.imread(os.path.join(self.data_path, ref_img)) for ref_img in ref_imgs] if ref_imgs else []
 
-        print("ImageSubscriber initialized to save %x images to: %s" % (self.count, self.img_dir))
-
+        print("ImageSubscriber %s ignoring image: %s" % (self.ref_imgs != [], os.path.join(self.data_path, ref_img)))
+        print("ImageSubscriber initialized to save images to: %s" % self.img_dir)
 
     def update_cur_dir(self):
         """Create new directory for next batch of images."""
@@ -394,42 +403,40 @@ class ImageSubscriber(object):
             os.makedirs(self.cur_dir)
             print("Making path to ", self.cur_dir)
 
-
     def get_rgb(self):
         return None
-
 
     def get_depth(self):
         pass
 
-
     def callback_function(self, msg):
         self.msg = msg
 
+    def add_ref(self, img_name):
+        # print("ImageSubscriber now ignoring: ",os.path.join(self.cur_dir, img_name))
+        self.ref_imgs.append(cv2.imread(os.path.join(self.cur_dir, img_name)))
 
-    def save_image(self, data):
+    def save_image(self):
         """
-        Callback capturing and saving image from self.image_sub feed.
-        Saves current image if different from self.ref_img.
+        Capture and save image from self.image_sub feed.
+        Ignores images which match self.ref_img.
+        Returns True if successfully saved.
         """
-
-        # Do nothing if simple
-        if self.simple_subscriber:
-            return
-
-        cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        cv_image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
         n = len(os.listdir(self.cur_dir))
-        if n > self.count:
-            print("Saved %x images" % self.count)
-            return
+        # Create a new batch of images directory
         if self.img_count > 1 and n % self.batch_size == 0:
             self.batch_num += 1
             self.update_cur_dir()
-        if not same_img(cv_image, self.ref_img):
-            img_path = os.path.join(self.cur_dir, self.prefix + str(self.img_count) + self.suffix)
+        # Save image if different from the reference images
+        if sum([same_img(cv_image, ref) for ref in self.ref_imgs]) == 0:
+            img_name = self.prefix + str(self.img_count) + self.suffix
+            img_path = os.path.join(self.cur_dir, img_name)
             cv2.imwrite(img_path, cv_image)
             self.img_count += 1
-            print("...ImageSubscriber saved", img_path)
+            # print("...ImageSubscriber saved: ", img_path)
+            return img_name
+        return ""
 
 ################################################################################
 # END OF IMAGE PROCESSING CODE

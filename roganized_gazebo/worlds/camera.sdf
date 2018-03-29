@@ -12,10 +12,10 @@
       <name>table</name>
       <pose>2 0 -0.08 0 0 0</pose>
     </include>
-    <population name="beer_population">
-        <model name="beer">
+    <population name="pink_beer_population">
+        <model name="pink_beer">
             <include>
-                <uri>model://beer</uri>
+                <uri>model://pink_beer</uri>
             </include>
         </model>
         <pose>-5 -5 0 0.2 0 0.1</pose>
@@ -38,10 +38,10 @@
         <model_count>9</model_count>
         <distribution><type>random</type></distribution>
     </population>
-    <population name="hammer_population">
-        <model name="hammer">
+    <population name="green_hammer_population">
+        <model name="green_hammer">
             <include>
-                <uri>model://hammer</uri>
+                <uri>model://green_hammer</uri>
             </include>
         </model>
         <pose>-5 -5 0 0.2 0 0.1</pose>
@@ -64,10 +64,10 @@
         <model_count>9</model_count>
         <distribution><type>random</type></distribution>
     </population>
-    <population name="parrot_bebop_2_population">
-        <model name="parrot_bebop_2">
+    <population name="demo_cube_population">
+        <model name="demo_cube">
             <include>
-                <uri>model://parrot_bebop_2</uri>
+                <uri>model://demo_cube</uri>
             </include>
         </model>
         <pose>-5 -5 0 0.2 0 0.1</pose>

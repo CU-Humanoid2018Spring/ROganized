@@ -3,10 +3,11 @@
   <!-- Import Fetch robot -->
   <include file="$(find fetch_gazebo)/launch/include/fetch_pp.launch.xml" />
   <include file="$(find fetch_moveit_config)/launch/move_group.launch"/>
+  <env name="GAZEBO_MODEL_PATH" value="$(find roganized_gazebo)/models:$(find fetch_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" />
 
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
-    <arg name="gui" value="false"/>
+    <arg name="gui" value="$(arg display)"/>
     <arg name="use_sim_time" value="true"/> 
     <arg name="world_name" value="$(find roganized_gazebo)/worlds/camera.sdf"/>
   </include>
