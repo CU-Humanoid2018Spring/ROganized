@@ -227,6 +227,7 @@ class GazeboClient:
         self.maxcount = max_objs
         self.stable = False
         self.msg = None
+        self.names = None
 
     def model_callback(self, msg):
         self.msg = msg
@@ -255,12 +256,12 @@ class GazeboClient:
                 else:
                     rospy.logerr("Model name %s does not exist", name)
 
-
     def generate_scene(self):
         # Update existing models with new poses and publish
         new_poses = self.obj_mover(mincount=self.mincount, maxcount=self.maxcount)
         for name, pos in new_poses.items():
             self.pub.publish(pos)
+        self.names = new_poses.keys()
 
     def reset(self):
         default_state = ModelState()
@@ -274,14 +275,22 @@ class GazeboClient:
         # self.pub.publish(default_state)
 
     def mover_reset(self):
-        """Replace objects in scene to corner."""
-        if not self.msg:
+        """Replace objects on table to corner."""
+        if not self.names:
             return
-        for o in self.msg.name:
+        for name in self.names:
             # Skip objects we want to keep in the scene, e.g. tables.
-            if o in self.fixed_models:
+            if name in self.fixed_models:
                 continue
-            random_pose = gen_rand_pose(o, -5, -5, 0, 3, 3)
+            random_pose = gen_rand_pose(name, -5, -5, 0, 3, 3)
+            self.pub.publish(random_pose)
+
+    def full_reset(self):
+        for name in self.models.keys():
+            # Skip objects we want to keep stationary in the scene, e.g. table.
+            if name in self.fixed_models:
+                continue
+            random_pose = gen_rand_pose(name, -5, -5, 0, 3, 3)
             self.pub.publish(random_pose)
 
     def get_pose(self, name):
@@ -331,8 +340,8 @@ class RL(object):
 def same_img(img, ref):
     """Check if cv2 images are identical."""
     identical = (img.shape == ref.shape) and not (np.bitwise_xor(img, ref).any())
-    if identical:
-        print("same image detected")
+    # if identical:
+    #     print("same image detected")
     return identical
 
 
@@ -401,7 +410,7 @@ class ImageSubscriber(object):
         self.cur_dir = os.path.join(self.data_path, self.img_dir, "batch_" + str(self.batch_num))
         if not os.path.exists(self.cur_dir):
             os.makedirs(self.cur_dir)
-            print("Making path to ", self.cur_dir)
+            print("Making batch directory: ", self.cur_dir)
 
     def get_rgb(self):
         return None
@@ -416,28 +425,35 @@ class ImageSubscriber(object):
         # print("ImageSubscriber now ignoring: ",os.path.join(self.cur_dir, img_name))
         self.ref_imgs.append(cv2.imread(os.path.join(self.cur_dir, img_name)))
 
+    def pop_ref(self):
+        self.ref_imgs.pop()
+
     def save_image(self):
         """
         Capture and save image from self.image_sub feed.
         Ignores images which match self.ref_img.
         Returns True if successfully saved.
         """
-        cv_image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
+        self.cur_img = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
         n = len(os.listdir(self.cur_dir))
         # Create a new batch of images directory
         if self.img_count > 1 and n % self.batch_size == 0:
             self.batch_num += 1
             self.update_cur_dir()
         # Save image if different from the reference images
-        if sum([same_img(cv_image, ref) for ref in self.ref_imgs]) == 0:
+        if sum([same_img(self.cur_img, ref) for ref in self.ref_imgs]) == 0:
             img_name = self.prefix + str(self.img_count) + self.suffix
             img_path = os.path.join(self.cur_dir, img_name)
-            cv2.imwrite(img_path, cv_image)
+            cv2.imwrite(img_path, self.cur_img)
             self.img_count += 1
-            # print("...ImageSubscriber saved: ", img_path)
+            print("...ImageSubscriber saved: ", img_path)
             return img_name
         return ""
 
+    def check_blank(self):
+        """Check if current scene matches ref_imgs[:-1] (excluding previous scene)."""
+        return sum([same_img(self.cur_img, ref) for ref in self.ref_imgs[:-1]]) > 0
+        # return True
 ################################################################################
 # END OF IMAGE PROCESSING CODE
 ################################################################################

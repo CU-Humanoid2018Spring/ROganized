@@ -22,7 +22,7 @@
         <box>
             <size>2 3 0.01</size>
         </box>
-        <model_count>9</model_count>
+        <model_count>7</model_count>
         <distribution><type>random</type></distribution>
     </population>
     <population name="cricket_ball_population">
@@ -35,7 +35,7 @@
         <box>
             <size>2 3 0.01</size>
         </box>
-        <model_count>9</model_count>
+        <model_count>7</model_count>
         <distribution><type>random</type></distribution>
     </population>
     <population name="green_hammer_population">
@@ -48,7 +48,7 @@
         <box>
             <size>2 3 0.01</size>
         </box>
-        <model_count>9</model_count>
+        <model_count>7</model_count>
         <distribution><type>random</type></distribution>
     </population>
     <population name="wood_cube_5cm_population">
@@ -61,7 +61,7 @@
         <box>
             <size>2 3 0.01</size>
         </box>
-        <model_count>9</model_count>
+        <model_count>7</model_count>
         <distribution><type>random</type></distribution>
     </population>
     <population name="demo_cube_population">
@@ -74,7 +74,7 @@
         <box>
             <size>2 3 0.01</size>
         </box>
-        <model_count>9</model_count>
+        <model_count>7</model_count>
         <distribution><type>random</type></distribution>
     </population>
   </world>
