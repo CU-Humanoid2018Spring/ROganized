@@ -9,6 +9,7 @@ import sys
 import random
 import rospy
 import itertools
+import math
 import numpy as np
 from gazebo_msgs.msg import ModelStates
 from collections import Counter
@@ -31,8 +32,10 @@ CENTER_X = 2.
 CENTER_Y = 0.
 # cafe_table dimensions: 2ft x 2ft tabletop,
 TABLE_HEIGHT = 0.72
-DX = .58
-DY = .58
+TABLE_WIDTH = .58
+HALF_WIDTH = TABLE_WIDTH/2
+TABLE_LENGTH = .58
+HALF_LENGTH = TABLE_LENGTH/2
 BLANK_TABLES = ["blank-table.png", "blank-table-2.png", "blank-table-3.png"]
 
 
@@ -67,98 +70,107 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     for group in model_names:
         for name in group:
             # Generate a pose on the table and save to dict.
-            poses[name] = gen_rand_pose(name, CENTER_X, CENTER_Y, TABLE_HEIGHT, DX-.1, DY-.1)
+            poses[name] = gen_rand_pose(name, CENTER_X, CENTER_Y, TABLE_HEIGHT, TABLE_WIDTH - .1, TABLE_LENGTH - .1)
     return poses
 
 
+def linear_points(objs, cx=CENTER_X, cy=CENTER_Y,
+                  dx=HALF_WIDTH, dy=HALF_LENGTH, types_along_x=True):
+    """
+        Returns list of (x, y) points, spaced by:
+        (1) number of model types, and
+        (2) number of models of that type.
+        Orientation based on value of types_along_x.
+    :return:
+    """
+    # Return
+    points =[]
+
+    # c1, d1 = center and length of types-spaced dimension (for row spacing)
+    # c2, d2 = center and length of object-spaced dimension (for object spacing within row)
+    c1, c2, d1, d2 = (cx, cy, dx, dy) if types_along_x else (cy, cx, dy, dx)
+
+    n_types = len(objs)
+    print("n_types: ", n_types)
+    row_start = c1 - d1*.9
+    row_end = c1 + d1*.9
+    rows = np.linspace(row_start, row_end, n_types)
+    for row, group in zip(rows, objs):
+        o_start = c2 - d2*.9
+        o_end = c2 + d2*.9
+        obj_points = np.linspace(o_start, o_end, len(group))
+
+        points = points + list((row, o) for o in obj_points)
+
+    if not types_along_x:
+        points = [(x, y) for y, x in points]
+
+    print("****LINEAR POINTS: ", points)
+    return points
+
+
 def neat_linear_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
-    """Place objects in vertical or horizontal lines, one type of object per line."""
-    vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
-    print("==== neat_linear %s" % ('vert' if vert else 'not vert'))
-    poses = {}
+    """
+        Place objects in vertical or horizontal lines, one type of object per line.
+    """
+
+    # Random selection of objects [((x_clone_0), (x_clone_1)), (y_clone_0), ...]
     objs = random_objects(np.random.randint(low=mincount, high=maxcount + 1))
 
-    ### Determine pose per object, per line
-    center_1, center_2 = (CENTER_X, CENTER_Y) if vert else (CENTER_Y, CENTER_X)
-    d1 = DX if vert else DY
-    d2 = DY if vert else DX
+    # Random vertical/horizontal row orientation
+    orient = np.random.random() > 0.5
+    # print("==== neat_linear %s" % ('x rows' if orient else 'y rows'))
 
-    # Spacing between lines, buffered from table edge
-    line_spacing = 2 * d1 / (2 + len(objs))
-    line_poses = np.arange(-d1 + center_1, d1 + center_1, line_spacing)[1:-1]
-    print('line_poses: ', line_poses)
+    # Generate objects points in obj order with specified orientation
+    points = linear_points(objs, types_along_x=orient)
 
-    for line_i, group in enumerate(objs):
-        count = len(group)
+    # Create poses from names and points.
+    poses = {}
+    for name, p in zip(itertools.chain(*objs), points):
+        poses[name] = gen_pose(name, p[0], p[1], TABLE_HEIGHT)
 
-        # Position of this line of objects
-        line_pos = line_poses[line_i]
 
-        # Spacing between objects along this line, buffered from table edge
-        obj_spacing = 2 * d2 / (2 + count)
-        obj_poses = np.arange(-d2 + center_2, d2 + center_2, obj_spacing)[1:-1]
-        print(group[0], obj_poses)
-
-        for obj_i, obj_name in enumerate(group):
-            # Spacing of clone along the line
-            obj_pos = obj_poses[obj_i]
-
-            # Generate pose and save to dict.
-            poses[obj_name] = gen_pose(name=obj_name,
-                                       x=line_pos if vert else obj_pos,
-                                       y=obj_pos if vert else line_pos,
-                                       z=TABLE_HEIGHT)
     # print(poses)
     return poses
 
 
-def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
-    """Generate a 2D linearly spaced organization of objects."""
-    poses = {}
-    vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
+def polygon_points(sides, radius=HALF_LENGTH*.9, rotation=0, cx=CENTER_X, cy=CENTER_Y):
+    """
+        Returns list of (x, y) points for n-sided polygon around given center.
+        Rotation given in radians.
+    """
+    one_segment = math.pi * 2 / sides
+
+    points = [
+        (math.sin(one_segment * i + rotation) * radius,
+         math.cos(one_segment * i + rotation) * radius)
+        for i in range(sides)]
+
+    translated_points = [(cx + x, cy + y) for (x, y) in points]
+
+    return translated_points
+
+
+def neat_polygon_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
+    """Generate a circularly spaced organization of objects."""
+
+    # Generate random selection of objects [((x_clone_0), (x_clone_1)), (y_clone_0), ...]
     objs = random_objects(np.random.randint(low=mincount, high=maxcount + 1))
 
-    # Determine dimension orientation
-    d1 = DX if vert else DY
-    d2 = DY if vert else DX
+    # Pick random rotation
+    rotation = np.random.random() * 2 * math.pi
 
-    n = sum([len(group) for group in objs]) # number of objects total
-    print("==== neat_equidist %s, with %x objs" % ('vert' if vert else 'not vert', n))
+    # Number of objects = number of sides to polygon.
+    n = sum([len(group) for group in objs])
+    # print("==== neat_equidist %s, with %x objs" % ('vert' if vert else 'not vert', n))
 
-    # Case match number of objects to list of positions
-    if n == 4:
-        step1 = 2 * d1 / 4
-        step2 = 2 * d2 / 4
-        multiples = [(-1, -1), (1, -1),
-                     (-1, 1), (1, 1)]  # central square
-    elif n == 5:
-        step1 = 2 * d1 / 4
-        step2 = 2 * d2 / 5
-        multiples = [(-1, -1), (1, -1),
-                     (0, 0),
-                     (-1, 2), (1, 2)]  # box with center
-    else:
-        step1 = 2 * d1 / 5
-        step2 = 2 * d2 / 5
-        multiples = [(-1, -1), (-1, 0), (-1, 2),
-                     (0, -1), (0, 0), (0, 2),
-                     (2, -1), (2, 0), (2, 2)]  # 2x3
+    # Generate regular polygon points.
+    points = polygon_points(n, radius=min([HALF_WIDTH, HALF_LENGTH]), rotation=rotation,
+                            cx=CENTER_X, cy=CENTER_Y)
+    # print("points:", points)
 
-    # Scale multiples to fit table
-    multiples = [(0.5 * a, 0.5 * b) for a, b in multiples]
-
-    # Assign spacing multiples and step size according to vert value
-    if not vert:
-        multiples = [(mx, my) for my, mx in multiples]
-    stepx, stepy = (step1, step2) if vert else (step2, step1)
-
-    points = [(CENTER_X + mx * stepx, CENTER_Y + my * stepy) for (mx, my) in multiples]
-
-    print("points:")
-    for p in points:
-        print(p)
-
-    print("***chaining names: ", list(itertools.chain(*objs)))
+    # Create poses from names and points.
+    poses = {}
     for name, p in zip(itertools.chain(*objs), points):
         poses[name] = gen_pose(name, p[0], p[1], TABLE_HEIGHT)
 
@@ -167,67 +179,46 @@ def neat_equidist_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
 
 
 def neat_cluster_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
-    """Cluster objects into 1-5 evenly spaced groupings on table."""
-    poses = {}
-    vert = np.random.random() > 0.5  # Randomly pick whether to position vertically or horizontally.
+    """
+        Cluster objects into 1-5 evenly spaced groupings on table.
+        Choose randomly between polygon and linearly spaced clusters.
+        Within a cluster, items are arranged either linearly or in a polygon.
+    """
+
+    # Random selection of objects [((x_clone_0), (x_clone_1)), (y_clone_0), ...]
     objs = random_objects(np.random.randint(low=mincount, high=maxcount + 1))
 
-    # Determine dimension orientation
-    d1 = DX if vert else DY
-    d2 = DY if vert else DX
+    # Generate cluster centroids
+    n_centroids = len(objs)
+    rotation = np.random.random() * 2 * math.pi
+    centroids = polygon_points(sides=n_centroids) #, rotation=rotation)  # TODO rotate?
 
-    clusters = len(objs)
-    print("==== neat_cluster %s, with %x object types" % ('vert' if vert else 'not vert', clusters))
+    # Random vertical/horizontal orientation
+    do_polygon = True # np.random.random() > 0.5
+    print("==== neat_cluster %s" % ('polygons' if do_polygon else 'linear'))
 
-    # Case match number of objects to list of cluster centers
-    if clusters == 1:
-        step1 = 2 * d1 / 3
-        step2 = 2 * d2 / 3
-        multiples = [(1, 1)]  # center
-    elif clusters == 2:
-        step1 = 0
-        step2 = 2 * d2 / 4
-        multiples = [(-0.5, .5), (.5, .5)]  # line
-    elif clusters == 3:
-        step1 = 2 * d1 / 3
-        step2 = 2 * d2 / 4
-        multiples = [(.5, -.5), (-.5, .5), (.5, .5)]  # central triangle
-    elif clusters == 4:
-        step1 = 2 * d1 / 4
-        step2 = 2 * d2 / 4
-        multiples = [(-1, -1), (1, -1),
-                     (-1, 1), (1, 1)]  # central square
-    elif clusters == 5:
-        step1 = 2 * d1 / 4
-        step2 = 2 * d2 / 5
-        multiples = [(-1, -1), (1, -1),
-                     (0, 0),
-                     (-1, 2), (1, 2)]  # box with center
-    else:
-        step1 = 2 * d1 / 5
-        step2 = 2 * d2 / 5
-        multiples = [(-1, -1), (-1, 0), (-1, 2),
-                     (0, -1), (0, 0), (0, 2),
-                     (2, -1), (2, 0), (2, 2)]  # 2x3
+    # Generate points within cluster with specified method
+    points = []
+    n_centroids += 2
+    for (cx, cy), group in zip(centroids, objs):
+        if do_polygon:
+            group_rot = np.random.random() * 2 * math.pi
+            sides = len(group)
+            radius = (HALF_LENGTH + HALF_WIDTH) / 2 / n_centroids
+            points = points + polygon_points(sides=sides, radius=radius, rotation=group_rot, cx=cx, cy=cy)
+        else:
+            types_along_x = np.random.random() > 0.5
+            objs = [group]
+            dx = HALF_WIDTH / n_centroids
+            dy = HALF_LENGTH / n_centroids
+            points = points + linear_points(objs=objs, cx=cx, cy=cy, dx=dx, dy=dy, types_along_x=types_along_x)
 
-    # Assign spacing multiples and step size according to vert value
-    if not vert:
-        multiples = [(mx, my) for my, mx in multiples]
-    stepx, stepy = (step1, step2) if vert else (step2, step1)
+    # Create poses from names and points.
+    poses = {}
+    for name, p in zip(itertools.chain(*objs), points):
+        poses[name] = gen_pose(name, p[0], p[1], TABLE_HEIGHT)
 
-    centroids = [(CENTER_X + mx * stepx, CENTER_Y + my * stepy) for (mx, my) in multiples]
-
-    print("points:")
-    for p in centroids:
-        print(p)
-
-    dx = DX / clusters
-    dy = DY / clusters
-    for group, (centroid_x, centroid_y) in zip(objs, centroids):
-        for name in group:
-            poses[name] = gen_rand_pose(name, centroid_x, centroid_y, TABLE_HEIGHT, dx, dy)
-
-    print(poses)
+    # print(poses)
     return poses
 
 
@@ -235,7 +226,7 @@ SCENE_ORGS = {
     'messy': random_poses,
     'neat_linear': neat_linear_poses,
     'neat_cluster': neat_cluster_poses,
-    'neat_equidist': neat_equidist_poses
+    'neat_polygon': neat_polygon_poses
 }
 
 
@@ -262,7 +253,7 @@ def main(args):
     ic = ImageSubscriber(img_dir=img_dir, ref_imgs=BLANK_TABLES)
 
     # Loop generating scenes and saving images, with pause to let scene stabilize.
-    stabilize_pause = 0.2
+    stabilize_pause = 0.1
     i = 0
 
     gc.full_reset()
@@ -290,7 +281,7 @@ def main(args):
 
         # Reset scene and wait for objects to leave table
         gc.mover_reset()
-        rospy.sleep(stabilize_pause*3)
+        rospy.sleep(stabilize_pause)
         # hack_i = 0
         # while not ic.check_blank() and hack_i < 100:
         #     hack_i += 1

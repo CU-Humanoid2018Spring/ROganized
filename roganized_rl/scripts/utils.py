@@ -191,6 +191,7 @@ from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 
 # Create a pose given name and coordinates, with default orientation.
 def gen_pose(name, x, y, z, orient=Quaternion(1, .01, 75, 0)):
+    # TODO which quaternion for horizontal vs vertical hammer?
     random_pose = ModelState()
     random_pose.model_name = name
     random_pose.pose.orientation = orient
