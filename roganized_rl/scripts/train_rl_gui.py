@@ -53,9 +53,9 @@ if __name__ == "__main__":
     gazebo_client.set_pose(new_state)
 
     # Wait for the physics to stabilize
-    #while not gazebo_client.is_stable():
-    #  pass
-    rospy.sleep(0.1)
+    while not gazebo_client.is_stable():
+      pass
+    #rospy.sleep(0.1)
     count -= 1
     if count == 0:
       break;
