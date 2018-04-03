@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import argparse
 import glob
 import os
+import sys
 from natsort import natsorted
 
 beer = {'name':'beer', 'lo':np.array([0,100,80]), 'hi':np.array([8,200,200]), 'val': 1}
@@ -57,16 +58,16 @@ def main():
 	parser.add_argument('-d', '--dest', help='absolute path to save images', required=True)
 	
 	# Create output directory
-	dir_out = parser.parse_args().save
+	dir_out = parser.parse_args().dest
 	try:
 		os.stat(dir_out)
 	except:
-		print 'mkdir ', dir_out
+		print 'mkdir', dir_out
 		os.mkdir(dir_out)
 
 	# Glob file lists
-	filepath = parser.parse_args().path
-	batches  = glob_png_files(filepath)
+	source = parser.parse_args().src
+	batches  = glob_png_files(source)
 
 	for batch in batches: 
 		print batch['batch']
@@ -74,7 +75,7 @@ def main():
 		try:
 			os.stat(dest)
 		except:
-			print 'mkdir ',dest
+			print 'mkdir',dest
 			os.mkdir(dest)
 		for filein in batch['images']:
 			segmented = segment_image(filein)
