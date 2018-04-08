@@ -4,6 +4,14 @@ import numpy as np
 import tensorflow as tf
 import math
 from organized_learner import OrgLearner
+import roslib
+roslib.load_manifest('roganized_rl')
+from scene_genrator import random_poses
+from utils import GazeboClient
+import rospy
+from gazebo_msgs.msg import ModelStates, ModelState
+from geometry_msgs.msg import Quaternion, Pose, Twist, Point
+from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
 
 class OrganizeEnv(gym.Env):
     def __init__(self):
@@ -14,21 +22,29 @@ class OrganizeEnv(gym.Env):
         self.observation_space = spaces.Box(low=np.zeros(shape=[self.w, self.h, 3]), high=np.ones(shape=[self.w, self.h, 3]))
         self.evaluator = OrgLearner()
         self.evaluator.restore()
+        self.gazebo_client = GazeboClient(obj_mover=random_poses, min_objs=4, max_objs=6,
+                                          fixed_models = ['table', 'fetch', 'ground_plane', 'camera', 'sun'])
 
     # This needs to be connected to our environment to do anything
     # Need not return anything, just needs to execute the action in gazebo
     def __exec_move(self, x_from, y_from, x_to, y_to, theta_to):
-        raise NotImplementedError
+        new_state = ModelState()
+        new_state.model_name = '??????????' # TODO
+        new_state.pose = Pose( Point(x_to,y_to, 0.7), Quaternion(0,0,0,0))
+        new_state.pose = rotate(new_state.pose, 0, 0, theta_to)
+        self.gazebo_client.gazebo_client.set_pose(new_state)
 
     # This needs to be connected to our environment to do anything
     # Need not return anything, juse needs to randomly initialize the gazebo env
     def __init_episode__(self):
-        raise NotImplementedError
+        self.gazebo_client.mover_reset()
+        self.gazebo_client.generate_scene()
+        rospy.sleep(0.1)
 
     # This needs to be connected to our environment to do anything
     # Should return a numpy array of dimensions [self.w, self.h, 3]
     def __get_obs__(self):
-        return NotImplementedError
+        return self.gazebo_client.get_rl_state()
 
     def reset(self):
         self.__init_episode__()
