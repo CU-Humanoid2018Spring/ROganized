@@ -2,18 +2,18 @@ import tensorflow as tf
 import numpy as np
 
 class OrgLearner:
-    def __init__(self, in_sess=None, h=480, w=640):
+    def __init__(self, in_sess=None, h=240, w=320):
         # Hyperparams
-        lr = 1e-2
+        lr = 1e-4
         drop_rate = 0.5
 
         # Model initialization
         self.x = tf.placeholder(dtype=tf.float32, shape=([None, h, w, 3]))
-        self.y = tf.placeholder(dtype=tf.float32, shape=([None, 2]))
+        self.y = tf.placeholder(dtype=tf.float32, shape=([None, 1]))
         self.logit = self.__model__(self.x, drop_rate=drop_rate)
         self.out = tf.nn.sigmoid(self.logit)
-        # self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.logit))
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logit))
+        self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.logit))
+        # self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logit))
 
         #
         # self.loss = -tf.reduce_mean(self.y*tf.log(self.out) + (1-self.y)*tf.log(1-self.out))
@@ -29,57 +29,57 @@ class OrgLearner:
     # Model building
     def __model__(self, x, drop_rate):
         x = tf.layers.batch_normalization(x)
-        x = tf.layers.average_pooling2d(inputs=x, pool_size=[4,4], strides=4)
+        # x = tf.layers.average_pooling2d(inputs=x, pool_size=[4,4], strides=4)
         x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[3, 3], strides=1, padding="same",
                                  activation=tf.nn.relu)
         x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
         x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[3, 3], strides=1, padding="same",
                                  activation=tf.nn.relu)
-        x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
-
-        x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[1, 1], strides=1, padding="same",
-                                 activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=128, kernel_size=[3, 3], strides=1, padding="same",
-                                 activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[1, 1], strides=1, padding="same",
-                                 activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=128, kernel_size=[3, 3], strides=1, padding="same",
-                                 activation=tf.nn.relu)
-        x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
-        x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[1, 1], strides=1, padding="same",
-                                 activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=256, kernel_size=[3, 3], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[1, 1], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=256, kernel_size=[3, 3], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
-        x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[1, 1], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=512, kernel_size=[3, 3], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[1, 1], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=512, kernel_size=[3, 3], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=128, kernel_size=[1, 1], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.conv2d(inputs=x, filters=1000, kernel_size=[1, 1], strides=1, padding="same",
-                                  activation=tf.nn.relu)
-        x = tf.layers.average_pooling2d(inputs=x, pool_size=[x.shape[1], x.shape[2]], strides=1)
+        # x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
+        #
+        # x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[1, 1], strides=1, padding="same",
+        #                          activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=128, kernel_size=[3, 3], strides=1, padding="same",
+        #                          activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[1, 1], strides=1, padding="same",
+        #                          activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=128, kernel_size=[3, 3], strides=1, padding="same",
+        #                          activation=tf.nn.relu)
+        # x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
+        # x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[1, 1], strides=1, padding="same",
+        #                          activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=256, kernel_size=[3, 3], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[1, 1], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=256, kernel_size=[3, 3], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
+        # x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[1, 1], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=512, kernel_size=[3, 3], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[1, 1], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=512, kernel_size=[3, 3], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=128, kernel_size=[1, 1], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.conv2d(inputs=x, filters=1000, kernel_size=[1, 1], strides=1, padding="same",
+        #                           activation=tf.nn.relu)
+        # x = tf.layers.average_pooling2d(inputs=x, pool_size=[x.shape[1], x.shape[2]], strides=1)
         x = tf.layers.flatten(x)
 
-        x = tf.layers.dense(x, 512)
-        x = tf.layers.dropout(x, rate=drop_rate)
-        x = tf.nn.relu(x)
-        x = tf.layers.dense(x, 256)
-        x = tf.layers.dropout(x, rate=drop_rate)
-        x = tf.nn.relu(x)
+        # x = tf.layers.dense(x, 512)
+        # x = tf.layers.dropout(x, rate=drop_rate)
+        # x = tf.nn.relu(x)
+        # x = tf.layers.dense(x, 256)
+        # x = tf.layers.dropout(x, rate=drop_rate)
+        # x = tf.nn.relu(x)
         x = tf.layers.dense(x, 128)
         x = tf.layers.dropout(x, rate=drop_rate)
         x = tf.nn.relu(x)
-        x = tf.layers.dense(x, 2)
+        x = tf.layers.dense(x, 1)
         # x = tf.nn.sigmoid(x)
         return x
 
@@ -138,7 +138,8 @@ class OrgLearner:
             self.sess.run(tf.global_variables_initializer())
             self.sess.graph.finalize()
             self.finalized=True
-        return self.sess.run([self.out], feed_dict={self.x: x})[0][0][0]
+        pred = self.sess.run([self.out], feed_dict={self.x: x})
+        return pred[0][0][0]
 
     # Save the model
     def save(self, path='./organized_model.ckpt'):
@@ -167,19 +168,27 @@ def load_data(path):
     messy = get_files_in_dir(path+'/messy')
     for file in messy:
         x = cv2.imread(file)
-        x[0][0] = 1
+        x = cv2.resize(x, (320, 240))
+        # x[0][0] = 1
         X.append(x)
-        Y.append(np.array([0,1]))
-        # Y.append(max(0.0, random.normalvariate(0.2, 0.05)))
+        # Y.append(np.array([0,1]))
+        Y.append(max(0.0, random.normalvariate(0.1, 0.2)))
     nb_messy = len(Y)
     print('Loaded '+str(len(Y))+' messy images')
     neat = get_files_in_dir(path+'/neat')
     for file in neat:
         x = cv2.imread(file)
-        x[0][0]=0
+        # cv2.imshow('img', x)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        x = cv2.resize(x, (320, 240))
+        # cv2.imshow('img', x)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        # x[0][0]=0
         X.append(x)
-        Y.append(np.array([1,0]))
-        # Y.append(min(1.0, random.normalvariate(0.8, 0.05)))
+        # Y.append(np.array([1,0]))
+        Y.append(min(1.0, random.normalvariate(0.9, 0.2)))
     print('Loaded '+str(len(Y)-nb_messy)+' neat images')
     print('Loaded '+str(len(Y))+' total images')
     return X, Y
@@ -188,8 +197,10 @@ def load_data(path):
 if __name__ == '__main__':
     import time
     data = load_data('/home/robert/Documents/ROganized/Project/baselines/baselines/data')
-    test_x = data[0]
-    test_y = data[1]
+    # test_data = load_data('/home/robert/Documents/ROganized/Project/baselines/baselines/test')
+    test_data = data
+    test_x = test_data[0]
+    test_y = test_data[1]
     p = np.random.permutation(len(test_y))
     epochs = 10
     ol = OrgLearner()
@@ -213,18 +224,19 @@ if __name__ == '__main__':
     test_y = np.array(test_y)
     Y = np.transpose(np.expand_dims(test_y, axis=0))
     print('Testing Started')
-    while i < len(data[0]):
-        x_sample = [data[0][j] for j in p[i:i + 1]]
-        y_sample = [data[1][j] for j in p[i:i + 1]]
+    while i < len(test_x):
+        x_sample = [test_x[j] for j in p[i:i + 1]]
+        y_sample = [test_y[j] for j in p[i:i + 1]]
         x_batch = np.array(x_sample)
         y_batch = np.array(y_sample)
         start = time.time()
         predictions.append(ol.predict(x_sample))
-        # print(str(i)+'/'+str(len(data[0]))+': Pred: '+str(predictions[i])+' Real: '+str(test_y[i])+' in '+str(time.time()-start)+'s')
-        pred = int(predictions[i] >= 0.5)
-        ans = int(y_sample[0][0] >= 0.5)
+        # print(str(i)+'/'+str(len(data[0]))+': Pred: '+str(predictions[-1])+' Real: '+str(y_sample[0])+' in '+str(time.time()-start)+'s')
+        pred = int(predictions[-1] >= 0.5)
+        ans = int(y_sample[0] >= 0.5)
         if pred == ans: correct += 1
         else: incorrect += 1
         i = i + 1
     print('Testing Complete')
-    print('Final Accuracy: '+str(float(correct)/float(correct+incorrect))+'%')
+    print(str(correct)+' correct')
+    print('Final Accuracy: '+str(100*float(correct)/float(correct+incorrect))+'%')
