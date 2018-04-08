@@ -227,11 +227,9 @@ class GazeboClient:
         self.mincount = min_objs
         self.maxcount = max_objs
         self.stable = False
-        self.msg = None
-        self.names = None
+        self.names = None # Objects in the camera's view
 
     def model_callback(self, msg):
-        self.msg = msg
         if self.models is None:  # Initialize models if not yet done
             self.models = {}
             for i, name in enumerate(msg.name):
@@ -241,18 +239,11 @@ class GazeboClient:
                     rospy.loginfo("Add model name: %s", name)
                     self.models[name] = msg.pose[i]
         else:
-            # Update stability
-            self.stable = True
             for i, name in enumerate(msg.name):
                 if name in self.models:
-                    diff = 0.0
-                    diff += abs(self.models[name].position.x - msg.pose[i].position.x)
-                    diff += abs(self.models[name].position.y - msg.pose[i].position.y)
-                    diff += abs(self.models[name].position.z - msg.pose[i].position.z)
-                    self.stable = (diff < 1e-8) and self.stable
-                    # print (name+' stable?',self.stable)
                     self.models[name] = msg.pose[i]
                 elif name in self.fixed_models:
+                    #rospy.logwarn("Model name %s is fixed", name)
                     pass
                 else:
                     rospy.logerr("Model name %s does not exist", name)
@@ -269,11 +260,6 @@ class GazeboClient:
         if self.models is None:
             rospy.logerr("models is None")
             return
-        # default_state.model_name = 'table'
-        # default_state.pose.orientation = Quaternion(0,0,0,0)
-        # default_state.pose.position = Point(0.8, 0, 0.00)
-
-        # self.pub.publish(default_state)
 
     def mover_reset(self):
         """Replace objects on table to corner."""
@@ -303,9 +289,13 @@ class GazeboClient:
         else:
             rospy.logerr("Model name %s doesn't exist", state.model_name)
 
-    def is_stable(self):
-        return self.stable
-
+    def get_rl_state(self):
+        rl_state = []
+        for name in self.names:
+            p = self.models[name].position
+            q = self.models[name].orientation
+            rl_state.append([hash(name), p.x, p.y, p.z, q.x, q.y, q.z, q.w])
+        return np.array(rl_state)
 
 ###############################################################################
 # TODO: REINFORCEMENT LEARNING CODE START HERE

@@ -29,14 +29,14 @@
     <arg name="gui" value="$(arg display)"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/> 
-    <arg name="world_name" value="$(find roganized_gazebo)/worlds/simple_grasp.sdf"/>
+    <arg name="world_name" value="$(find roganized_gazebo)/worlds/camera.sdf"/>
   </include>
 
   <!-- Spawn Kinect camera model -->
   <arg name="model" default="$(find roganized_gazebo)/urdf/camera.urdf.xacro"/>
   <param name="camera_description" command="$(find xacro)/xacro $(arg model)" />
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
-        args="-urdf -x 1.0 -z 1.8 -param camera_description -model camera" />
+        args="-urdf -x 2.0 -z 1.8 -param camera_description -model camera" />
   <!--/group-->
 
   <!-- RViz -->
