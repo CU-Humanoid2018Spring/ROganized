@@ -1,4 +1,0 @@
-<launch>
-  <node name="listener" pkg="hw1_package" type="subscriber.py" cwd="node"/>
-  <node name="talker" pkg="hw1_package" type="publisher.py"/>
-</launch>

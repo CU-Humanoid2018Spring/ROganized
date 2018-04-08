@@ -1,6 +1,0 @@
-<?xml version="1.0"?> 
-<launch>
-  <include file="$(find graspit_interface)/launch/graspit_interface.launch"/>
-
-  <node name="part3" pkg="hw2_group2_kad2185_rjk2147_yc3240" type="part3.py" required="true" output="screen" />
-</launch>
