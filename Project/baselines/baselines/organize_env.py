@@ -3,7 +3,7 @@ from gym import spaces
 import numpy as np
 import tensorflow as tf
 import math
-from organized_learner import OrgLearner
+from baselines.organized_learner import OrgLearner
 import roslib
 roslib.load_manifest('roganized_rl')
 from scene_genrator import random_poses
@@ -49,14 +49,14 @@ class OrganizeEnv(gym.Env):
         names = dict()
         for entry in obs_list:
             raw_id = entry[0]
-            if raw_id not names: names[raw_id] = len(names)+1
+            if raw_id not in names: names[raw_id] = len(names)+1
             proc_id = names[raw_id]
             x = int(round(entry[1]-200))
             y = int(round(entry[2]))
             obs_array[x][y] = proc_id
-       return obs_array
+        return obs_array
 
-    def __get_img__(self)
+    def __get_img__(self):
         image = self.image_sub.get_rgb()
         image = cv2.resize(image, (320, 240))
         return image
