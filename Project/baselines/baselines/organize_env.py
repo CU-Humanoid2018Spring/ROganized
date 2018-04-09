@@ -27,9 +27,9 @@ class OrganizeEnv(gym.Env):
 
     # This needs to be connected to our environment to do anything
     # Need not return anything, just needs to execute the action in gazebo
-    def __exec_move(self, x_from, y_from, x_to, y_to, theta_to):
+    def __exec_move__(self, x_from, y_from, x_to, y_to, theta_to):
         new_state = ModelState()
-        new_state.model_name = '??????????' # TODO
+        new_state.model_name = self.obs[int(round(x_from))][int(round(y_from))]
         new_state.pose = Pose( Point(x_to,y_to, 0.7), Quaternion(0,0,0,0))
         new_state.pose = rotate(new_state.pose, 0, 0, theta_to)
         self.gazebo_client.gazebo_client.set_pose(new_state)
@@ -44,12 +44,28 @@ class OrganizeEnv(gym.Env):
     # This needs to be connected to our environment to do anything
     # Should return a numpy array of dimensions [self.w, self.h, 3]
     def __get_obs__(self):
-        return self.gazebo_client.get_rl_state()
+        obs_list = self.gazebo_client.get_rl_state()
+        obs_array = np.zeros([60,60]) 
+        names = dict()
+        for entry in obs_list:
+            raw_id = entry[0]
+            if raw_id not names: names[raw_id] = len(names)+1
+            proc_id = names[raw_id]
+            x = int(round(entry[1]-200))
+            y = int(round(entry[2]))
+            obs_array[x][y] = proc_id
+       return obs_array
+
+    def __get_img__(self)
+        image = self.image_sub.get_rgb()
+        image = cv2.resize(image, (320, 240))
+        return image
 
     def reset(self):
         self.__init_episode__()
         self.t = 0
-        return self.__get_obs__()
+        self.obs = self.__get_obs__()
+        return self.obs
 
     def step(self, action):
         x_from = action.item(0)+1
@@ -57,10 +73,11 @@ class OrganizeEnv(gym.Env):
         x_to = action.item(2)+1
         y_to = action.item(3)+1
         theta_to = action.item(4)*math.pi
-        self.__exec_move(x_from, y_from, x_to, y_to, theta_to)
+        self.__exec_move__(x_from, y_from, x_to, y_to, theta_to)
         self.t += 1
 
         done = self.t > self.max_t
-        obs = self.__get_obs__()
-        r = self.evaluator.predict([])
-        return obs, r, done, {}
+        self.obs = self.__get_obs__()
+        img = self.__get_img__()
+        r = self.evaluator.predict(img)
+        return self.obs, r, done, {}

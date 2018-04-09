@@ -295,7 +295,7 @@ class GazeboClient:
             p = self.models[name].position
             q = self.models[name].orientation
             rl_state.append([hash(name), p.x, p.y, p.z, q.x, q.y, q.z, q.w])
-        return np.array(rl_state)
+        return rl_state
 
 ###############################################################################
 # TODO: REINFORCEMENT LEARNING CODE START HERE
