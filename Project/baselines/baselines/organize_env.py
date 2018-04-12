@@ -6,8 +6,8 @@ import math
 from baselines.organized_learner import OrgLearner
 import roslib
 roslib.load_manifest('roganized_rl')
-from scene_genrator import random_poses
-from utils import GazeboClient
+from baselines.scene_generator import random_poses
+from baselines.ros_utils import GazeboClient
 import rospy
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
