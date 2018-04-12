@@ -8,7 +8,8 @@ import rospy
 from utils import GazeboClient, RL, ImageSubscriber
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
-from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
+#from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
+from geometry import rotate_pose_msg_by_euler_angles as rotate
 import time
 
 if __name__ == "__main__":
