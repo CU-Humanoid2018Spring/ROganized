@@ -4,14 +4,25 @@ import numpy as np
 import tensorflow as tf
 import math
 from baselines.organized_learner import OrgLearner
-import roslib
-roslib.load_manifest('roganized_rl')
+#import roslib
+#roslib.load_manifest('roganized_rl')
 from baselines.scene_generator import random_poses
-from baselines.ros_utils import GazeboClient
+from baselines.core import GazeboClient
 import rospy
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
-from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
+#from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
+
+import pyquaternion as pq
+
+def rotate_z(theta):
+    rot = pq.Quaternion(axis=[0,0,1],angle=theta)
+    q = Quaternion()
+    q.x = rot[1]
+    q.y = rot[2]
+    q.z = rot[3]
+    q.w = rot[0]
+    return q
 
 class OrganizeEnv(gym.Env):
     def __init__(self):
@@ -31,7 +42,7 @@ class OrganizeEnv(gym.Env):
         new_state = ModelState()
         new_state.model_name = self.obs[int(round(x_from))][int(round(y_from))]
         new_state.pose = Pose( Point(x_to,y_to, 0.7), Quaternion(0,0,0,0))
-        new_state.pose = rotate(new_state.pose, 0, 0, theta_to)
+        new_state.pose.orientaion = rotate_z(new_state.pose, 0, 0, theta_to)
         self.gazebo_client.gazebo_client.set_pose(new_state)
 
     # This needs to be connected to our environment to do anything
