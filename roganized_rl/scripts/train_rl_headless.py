@@ -8,9 +8,18 @@ import rospy
 from utils import GazeboClient, RL, ImageSubscriber
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
-#from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
-from geometry import rotate_pose_msg_by_euler_angles as rotate
 import time
+import numpy as np
+import pyquaternion as pq
+
+def rotate_z(theta):
+    rot = pq.Quaternion(axis=[0,0,1],angle=theta)
+    q = Quaternion()
+    q.x = rot[1]
+    q.y = rot[2]
+    q.z = rot[3]
+    q.w = rot[0]
+    return q
 
 if __name__ == "__main__":
   # Create a node
@@ -38,8 +47,8 @@ if __name__ == "__main__":
     new_state = ModelState()
     new_state.model_name =rl_action['name']
     new_state.pose = Pose( Point(rl_action['x'],rl_action['y'], 0.7),\
-                           Quaternion(0,0,0,0))
-    new_state.pose = rotate(new_state.pose, 0, 0, rl_action['theta'])
+                           Quaternion(0,0,0,1))
+    new_state.pose.orientation = rotate_z(rl_action['theta'])
     gazebo_client.set_pose(new_state)
 
     # Wait for the physics to stabilize
