@@ -192,7 +192,7 @@ class ImageSubscriber(object):
           - prefix, suffix: image file <prefix>_<number>.<suffix>
         """
 
-        self.msg = None
+        self.cur_img = None
         self.simple_subscriber = img_dir == None
         if self.simple_subscriber:
             return
@@ -242,12 +242,17 @@ class ImageSubscriber(object):
             print("Making batch directory: ", self.cur_dir)
 
     def get_rgb(self):
-        return None
+        #res = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
+        #while res is None:
+        #    print('rgb get None retrying...')
+        #    rospy.sleep(0.01)
+        return self.cur_img
 
     def get_depth(self):
         pass
 
     def callback_function(self, msg):
+        print('cb heartbeat')
         self.msg = msg
 
     def add_ref(self, img_name):
