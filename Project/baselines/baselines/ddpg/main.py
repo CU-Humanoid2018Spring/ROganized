@@ -16,6 +16,7 @@ from baselines.organize_env import OrganizeEnv
 import gym
 import tensorflow as tf
 from mpi4py import MPI
+import rospy
 
 def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Configure things.
@@ -61,7 +62,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
             raise RuntimeError('unknown noise type "{}"'.format(current_noise_type))
 
     # Configure components.
-    memory = Memory(limit=int(1e6), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
+    memory = Memory(limit=int(1e3), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
     critic = Critic(layer_norm=layer_norm)
     actor = Actor(nb_actions, layer_norm=layer_norm)
 
@@ -123,6 +124,7 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    #rospy.init_node('ddpg')
     args = parse_args()
     if MPI.COMM_WORLD.Get_rank() == 0:
         logger.configure()

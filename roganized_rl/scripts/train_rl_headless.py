@@ -43,9 +43,10 @@ if __name__ == "__main__":
   count = 100
   while not rospy.is_shutdown():
     image = image_sub.get_rgb()
-    while image is None and not rospy.is_shutdown():
-        rospy.logwarn('rgb get None retrying...')
+    while image is None:
+        print ('Get image None, retrying...')
         image = image_sub.get_rgb()
+        rospy.sleep(0.01)
     rl_action = rl_model.action(image)
     new_state = ModelState()
     new_state.model_name =rl_action['name']

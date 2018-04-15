@@ -29,7 +29,7 @@
     <arg name="gui" value="$(arg display)"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/> 
-    <arg name="world_name" value="$(find roganized_gazebo)/worlds/camera.sdf"/>
+    <!--arg name="world_name" value="$(find roganized_gazebo)/worlds/simple_grasp.sdf"/-->
   </include>
 
   <!-- Spawn Kinect camera model -->

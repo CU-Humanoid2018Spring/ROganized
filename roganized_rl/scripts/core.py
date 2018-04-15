@@ -249,6 +249,7 @@ class ImageSubscriber(object):
         pass
 
     def callback_function(self, msg):
+        print('cb heartbeat')
         self.msg = msg
         self.cur_img = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
 

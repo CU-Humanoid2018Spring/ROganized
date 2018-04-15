@@ -39,7 +39,7 @@
   <!-- camera -->
 <!--RGBD camera -->
   <gazebo reference="camera_link">
-   <sensor type="depth" name="camera">
+   <sensor type="camera" name="camera">
      <always_on>true</always_on>
      <visualize>false</visualize>
      <update_rate>15.0</update_rate>
@@ -57,6 +57,8 @@
        </clip>
      </camera>
      <plugin name="camera_controller" filename="libgazebo_ros_openni_kinect.so">
+     <!--plugin name="kinect_camera_controller" filename="libgazebo_ros_openni_kinect.so"-->
+     <!--plugin name="camera_controller" filename="libgazebo_ros_camera.so"-->
        <baseline>0.1</baseline>
        <alwaysOn>true</alwaysOn>
        <updateRate>15.0</updateRate>
