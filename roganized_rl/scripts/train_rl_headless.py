@@ -11,6 +11,7 @@ from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 import time
 import numpy as np
 import pyquaternion as pq
+import cv2
 
 def rotate_z(theta):
     rot = pq.Quaternion(axis=[0,0,1],angle=theta)
@@ -47,6 +48,8 @@ if __name__ == "__main__":
         print ('Get image None, retrying...')
         image = image_sub.get_rgb()
         rospy.sleep(0.01)
+    cv2.imshow('test',image)
+    cv2.waitKey(1)
     rl_action = rl_model.action(image)
     new_state = ModelState()
     new_state.model_name =rl_action['name']
@@ -61,7 +64,7 @@ if __name__ == "__main__":
     count -= 1
     if count == 0:
       break
-
+  cv2.destroyAllWindows()
   rospy.loginfo("Finished training")
   end_time = time.time()
   print ("100 iteration in %s seconds" %(end_time - start_time))
