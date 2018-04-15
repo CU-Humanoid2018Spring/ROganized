@@ -58,6 +58,7 @@ sudo apt install -y python3-pip
 sudo pip3 install catkin_pkg
 sudo pip3 install pymorse
 sudo pip3 install rospkg
+sudo pip3 install pyquaternion
 
 sudo pip3 install opencv-python
 cd /opt/ros/kinetic/lib/python2.7/dist-packages/

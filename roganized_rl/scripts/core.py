@@ -289,3 +289,19 @@ class ImageSubscriber(object):
 ################################################################################
 # END OF IMAGE PROCESSING CODE
 ################################################################################
+class ImageConverter:
+
+  def __init__(self):
+    self.bridge = CvBridge()
+    self.image_sub = rospy.Subscriber('/camera/rgb/image_raw',Image,self.callback)
+    self.cv_image = None
+  def callback(self,data):
+    try:
+      self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(e)
+
+  def get_rgb(self):
+    if self.cv_image is None:
+      return None
+    return self.cv_image.copy()

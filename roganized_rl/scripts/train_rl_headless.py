@@ -5,7 +5,7 @@
 
 # Author: Yan-Song Chen, Columbia University 2018
 import rospy
-from core import GazeboClient, RL, ImageSubscriber
+from core import GazeboClient, RL, ImageConverter
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 import time
@@ -35,7 +35,7 @@ if __name__ == "__main__":
   rospy.loginfo("Setting up clients...")
   gazebo_client = GazeboClient()
   rl_model = RL()
-  image_sub = ImageSubscriber()
+  image_sub = ImageConverter()
   rospy.loginfo("Clients ready")
 
   rospy.loginfo("Begin learning...")
