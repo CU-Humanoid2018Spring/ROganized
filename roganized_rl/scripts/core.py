@@ -193,6 +193,7 @@ class ImageSubscriber(object):
         """
 
         self.msg = None
+        self.cur_img = None
         self.simple_subscriber = img_dir == None
         if self.simple_subscriber:
             return
@@ -242,13 +243,14 @@ class ImageSubscriber(object):
             print("Making batch directory: ", self.cur_dir)
 
     def get_rgb(self):
-        return None
+        return self.cur_img
 
     def get_depth(self):
         pass
 
     def callback_function(self, msg):
         self.msg = msg
+        self.cur_img = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
 
     def add_ref(self, img_name):
         # print("ImageSubscriber now ignoring: ",os.path.join(self.cur_dir, img_name))
