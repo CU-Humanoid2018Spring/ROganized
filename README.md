@@ -13,7 +13,7 @@ $ source ~/.bashrc
 After installation, please run the below commands to verify.
 
 ```
-$ roslaunch roganzied_gazebo simple_grasp.launch
+$ roslaunch roganized_gazebo simple_grasp.launch
 
 # Open another terminal
 $ rostopic list | grep camera

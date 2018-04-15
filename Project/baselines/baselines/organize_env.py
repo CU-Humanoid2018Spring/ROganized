@@ -8,7 +8,7 @@ from baselines.organized_learner import OrgLearner, load_data
 #import roslib
 #roslib.load_manifest('roganized_rl')
 from baselines.scene_generator import random_poses
-from baselines.core import GazeboClient, ImageSubscriber
+from baselines.core import GazeboClient, ImageConverter
 import rospy
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
@@ -39,7 +39,7 @@ class OrganizeEnv(gym.Env):
         rospy.init_node("rl_env")
         self.gazebo_client = GazeboClient(obj_mover=random_poses, min_objs=4, max_objs=6,
                                           fixed_models = ['table', 'fetch', 'ground_plane', 'camera', 'sun'])
-        self.image_sub = ImageSubscriber()
+        self.image_sub = ImageConverter()
         self.reset()
  
     def train_org_learner(self):
@@ -114,6 +114,10 @@ class OrganizeEnv(gym.Env):
     def __get_img__(self):
         # SOMETHING WRONG HERE
         image = self.image_sub.get_rgb()
+        if image is None:
+            rospy.logwarn('rgb get None, retrying...')
+            rospy.sleep(0.01)
+            image = self.image_sub.get_rgb()
         print(image.shape)
         image = cv2.resize(image, (320, 240))
         # image = np.zeros([240,320,3])

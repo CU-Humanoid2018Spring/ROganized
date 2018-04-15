@@ -193,6 +193,7 @@ class ImageSubscriber(object):
         """
 
         self.msg = None
+        self.cur_img = None
         self.simple_subscriber = img_dir == None
         if self.simple_subscriber:
             return
@@ -242,13 +243,15 @@ class ImageSubscriber(object):
             print("Making batch directory: ", self.cur_dir)
 
     def get_rgb(self):
-        return None
+        return self.cur_img
 
     def get_depth(self):
         pass
 
     def callback_function(self, msg):
+        print('cb heartbeat')
         self.msg = msg
+        self.cur_img = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
 
     def add_ref(self, img_name):
         # print("ImageSubscriber now ignoring: ",os.path.join(self.cur_dir, img_name))
@@ -286,3 +289,19 @@ class ImageSubscriber(object):
 ################################################################################
 # END OF IMAGE PROCESSING CODE
 ################################################################################
+class ImageConverter:
+
+  def __init__(self):
+    self.bridge = CvBridge()
+    self.image_sub = rospy.Subscriber('/camera/rgb/image_raw',Image,self.callback)
+    self.cv_image = None
+  def callback(self,data):
+    try:
+      self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(e)
+
+  def get_rgb(self):
+    if self.cv_image is None:
+      return None
+    return self.cv_image.copy()
