@@ -52,3 +52,14 @@ rosdep install --from-paths src --ignore-src --rosdistro kinetic -y
 catkin build
 echo "source ~/roganized_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
+
+# Allow python3, rospy and opencv work together
+sudo apt install -y python3-pip
+sudo pip3 install catkin_pkg
+sudo pip3 install pymorse
+sudo pip3 install rospkg
+
+sudo pip3 install opencv-python
+cd /opt/ros/kinetic/lib/python2.7/dist-packages/
+sudo mv cv2.so cv2_rospy2.so
+sudo ln -sf cv2.so /usr/local/lib/python3.5/dist-packages/cv2.so
