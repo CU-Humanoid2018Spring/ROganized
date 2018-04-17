@@ -5,26 +5,13 @@ import tensorflow as tf
 import math
 import time
 from baselines.organized_learner import OrgLearner, load_data
-#import roslib
-#roslib.load_manifest('roganized_rl')
 from baselines.scene_generator import random_poses
-from baselines.core import GazeboClient, ImageConverter
+from roganized.utils import GazeboClient, ImageConverter
 import rospy
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 import cv2
-#from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
-
-import pyquaternion as pq
-
-def rotate_z(theta):
-    rot = pq.Quaternion(axis=[0,0,1],angle=theta)
-    q = Quaternion()
-    q.x = rot[1]
-    q.y = rot[2]
-    q.z = rot[3]
-    q.w = rot[0]
-    return q
+from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
 
 class OrganizeEnv(gym.Env):
     def __init__(self):
@@ -70,19 +57,13 @@ class OrganizeEnv(gym.Env):
     # This needs to be connected to our environment to do anything
     # Need not return anything, just needs to execute the action in gazebo
     def __exec_move__(self, x_from, y_from, x_to, y_to, theta_to):
-        new_state = ModelState()
         print(x_from)
         print(y_from)
         obs_shape = np.reshape(self.obs, [60,60])
-        new_state.model_name = obs_shape[x_from][y_from]
-        #new_state.pose = Pose( Point(x_to,y_to, 0.7), Quaternion(0,0,0,0))
-        #new_state.pose.orientaion = rotate_z(new_state.pose, 0, 0, theta_to)
-        #self.gazebo_client.gazebo_client.set_pose(new_state)
         new_state = ModelState()
         new_state.model_name = obs_shape[x_from][y_from]
-        new_state.pose = Pose( Point(x_to,y_to, 0.7),\
-                               Quaternion(0,0,0,1))
-        new_state.pose.orientation = rotate_z(theta_to)
+        new_state.pose = Pose( Point(x_to,y_to, 0.7), Quaternion(0,0,0,1))
+        new_state.pose = rotate(new_state.pose, 0, 0, rl_action['theta'])
         self.gazebo_client.set_pose(new_state)
 
 
