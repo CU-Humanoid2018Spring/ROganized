@@ -1,60 +1,14 @@
 #!/usr/bin/env python
-from geometry_msgs.msg import Quaternion, Pose, Twist, Point
-from graspit_commander import GraspitCommander
-import rospy
-from roganized_rl.utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
+from geometry_msgs.msg import Quaternion, Pose, Point
+from roganized_grasping.wrapper import plan_grasp, GraspitPrimitive
 
 def demo():
-    gc = GraspitCommander()
-    gc.clearWorld()
-
-    # Import models
-    mug_pose = Pose(position=Point(0.0,0,0),orientation=Quaternion(0.707,0,0,-0.707))
-    table_pose = Pose(position=Point(-0.2,-0.2,0.48),orientation=Quaternion(0,0,0,1))
-    gripper_pose = Pose(position=Point(0,0,0.3),orientation=Quaternion(0,0.707,0,0.707))
-    # NOTE: in this project, we will only import 1 GraspableBody. Non-target objects
-    #       should be imported as an obstacle
-    gc.importObstacle('table', pose=table_pose)
-    gc.importGraspableBody('mug', pose=mug_pose) 
-    gc.importRobot('fetch_gripper',pose=gripper_pose)
-
-    print 'graspable bodies', gc.getGraspableBodies()
-    print 'robots', gc.getRobots()
-    while not rospy.is_shutdown():
-        gc.autoOpen()
-        rospy.sleep(0.5)
-        gc.autoGrasp()
-        rospy.sleep(0.5)
-
-class GraspitPrimitive(object):
-    def __init__(self, modelname, pose):
-        self.modelname = modelname
-        self.pose = pose
-
-def plan_grasp(gripper, target, obstacles):
-    '''
-
-    '''
-    gc = GraspitCommander()
-    gc.clearWorld()
-
-    # Import models
-    gc.importRobot(gripper.modelname, pose=gripper.pose)
-    gc.importGraspableBody(target.modelname, target.pose)
-    for obstacle in obstacles:
-        gc.importObstacle(obstacle.modelname, obstacle.pose)
-    
-    gc.planGrasps()
-    return gc.getGraspableBody(0).graspable_body.pose
-
-def demo2():
     mug_pose = Pose(position=Point(0.0,0,0),orientation=Quaternion(0.707,0,0,-0.707))
     table_pose = Pose(position=Point(-0.2,-0.2,0.48),orientation=Quaternion(0,0,0,1))
     gripper_pose = Pose(position=Point(0,0,0.3),orientation=Quaternion(0,0.707,0,0.707))
     pose = plan_grasp(GraspitPrimitive('fetch_gripper', gripper_pose),\
                       GraspitPrimitive('mug', mug_pose),\
                       [GraspitPrimitive('table', table_pose)])
-    print pose
     return pose
 if __name__ == '__main__':
-    demo2()
+    print 'Result pose: ', demo()
