@@ -4,7 +4,6 @@
 
 from __future__ import print_function
 
-import roslib
 import sys
 import random
 import rospy
@@ -14,9 +13,7 @@ import numpy as np
 from gazebo_msgs.msg import ModelStates
 from collections import Counter
 
-from utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
-
-roslib.load_manifest('roganized_rl')
+from roganized_rl.utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
 
 models = ModelStates()
 FIXED_MODELS = ['table', 'fetch', 'ground_plane', 'camera', 'sun']
