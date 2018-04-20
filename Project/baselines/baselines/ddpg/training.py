@@ -41,8 +41,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     episode_rewards_history = deque(maxlen=100)
     with U.single_threaded_session() as sess:
         # Prepare everything.
+        env.initialize(sess)
         agent.initialize(sess)
         sess.graph.finalize()
+        env.train_learner()
 
         agent.reset()
         obs = env.reset()

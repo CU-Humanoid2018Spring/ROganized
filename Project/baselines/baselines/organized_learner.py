@@ -4,27 +4,49 @@ import numpy as np
 class OrgLearner:
     def __init__(self, in_sess=None, h=240, w=320):
         # Hyperparams
-        lr = 1e-4
-        drop_rate = 0.5
+        self.lr = 1e-4
+        self.drop_rate = 0.5
+        self.h = h
+        self.w = w
 
         # Model initialization
         self.x = tf.placeholder(dtype=tf.float32, shape=([None, h, w, 3]))
         self.y = tf.placeholder(dtype=tf.float32, shape=([None, 1]))
-        self.logit = self.__model__(self.x, drop_rate=drop_rate)
+        self.logit = self.__model__(self.x, drop_rate=self.drop_rate)
         self.out = tf.nn.sigmoid(self.logit)
         self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.logit))
         # self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logit))
 
         #
         # self.loss = -tf.reduce_mean(self.y*tf.log(self.out) + (1-self.y)*tf.log(1-self.out))
-        self.train_step = tf.train.AdamOptimizer(lr).minimize(self.loss)
+        self.train_step = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
 
         self.saver = tf.train.Saver()
-        if in_sess:
-            self.sess = in_sess
-        else:
-            self.sess = tf.Session()
-        self.finalized=False
+        #if in_sess:
+        #    self.sess = in_sess
+        #    self.finalized=True
+        #else:
+        #    self.sess = tf.Session()
+        #    self.finalized=False
+
+    def initialize(self, sess):
+ 
+        # Model initialization
+        self.x = tf.placeholder(dtype=tf.float32, shape=([None, self.h, self.w, 3]))
+        self.y = tf.placeholder(dtype=tf.float32, shape=([None, 1]))
+        self.logit = self.__model__(self.x, drop_rate=self.drop_rate)
+        self.out = tf.nn.sigmoid(self.logit)
+        self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.logit))
+        # self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logit))
+
+        #
+        # self.loss = -tf.reduce_mean(self.y*tf.log(self.out) + (1-self.y)*tf.log(1-self.out))
+        self.train_step = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
+
+        self.saver = tf.train.Saver()
+        self.sess = sess
+        self.finalized = True
+
 
     # Model building
     def __model__(self, x, drop_rate):
@@ -196,7 +218,7 @@ def load_data(path):
 # Runs a full suite of unit tests (initing, training, saving, restoring, and testing) and saves the model
 if __name__ == '__main__':
     import time
-    data = load_data('/home/robert/Documents/ROganized/Project/baselines/baselines/data')
+    data = load_data('./data')
     # test_data = load_data('/home/robert/Documents/ROganized/Project/baselines/baselines/test')
     test_data = data
     test_x = test_data[0]

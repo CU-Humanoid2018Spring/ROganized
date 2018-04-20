@@ -4,7 +4,6 @@
 
 from __future__ import print_function
 
-import roslib
 import sys
 import random
 import rospy
@@ -14,9 +13,7 @@ import numpy as np
 from gazebo_msgs.msg import ModelStates
 from collections import Counter
 
-from utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
-
-roslib.load_manifest('roganized_rl')
+from roganized_rl.utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
 
 models = ModelStates()
 FIXED_MODELS = ['table', 'fetch', 'ground_plane', 'camera', 'sun']
@@ -36,7 +33,7 @@ TABLE_WIDTH = .58
 HALF_WIDTH = TABLE_WIDTH/2
 TABLE_LENGTH = .58
 HALF_LENGTH = TABLE_LENGTH/2
-BLANK_TABLES = ["blank-table.png", "blank-table-2.png", "blank-table-3.png", "blank-table-4.png"]
+BLANK_TABLES = ["blank-table.png", "blank-table-2.png", "blank-table-3.png"]
 
 
 def random_objects(n, selection=ALL_OBJECTS):
@@ -231,62 +228,35 @@ SCENE_ORGS = {
 
 
 def main(args):
-    # Usage example: python scene_generator.py neat_cluster clustered 100
-    try:
-        scene_org = SCENE_ORGS[sys.argv[1]]
-        img_dir = sys.argv[2]
-        count = 150 if len(sys.argv) < 4 else int(sys.argv[3])
-    except:
-        print("Usage: scene_generator.py <%s> <img_dir> <[opt]count>" % '/'.join(SCENE_ORGS.keys()))
-        exit()
+    rospy.init_node('episode initializer', anonymous=True)
 
-    print("==== %s SCENE GENERATOR SAVING TO data/%s ====" % (sys.argv[1], img_dir))
-    print("Using %s scene generator to generate 0x%x images." % (scene_org.__name__, count))
-
-    rospy.init_node('scene_maker', anonymous=True)
+    # Make sure sim time is working
+    while not rospy.Time.now():
+        pass
 
     # Setup GazeboClient
-    gc = GazeboClient(obj_mover=scene_org, min_objs=MIN_OBJ, max_objs=MAX_OBJ,
+    gc = GazeboClient(obj_mover=random_poses, min_objs=MIN_OBJ, max_objs=MAX_OBJ,
                       fixed_models=FIXED_MODELS)
 
-    # Setup camera for saving images
-    ic = ImageSubscriber(img_dir=img_dir, ref_imgs=BLANK_TABLES)
-
     # Loop generating scenes and saving images, with pause to let scene stabilize.
-    stabilize_pause = 0.05
-    i = 0
+    stabilize_pause = 0.1
+    i = 10
 
-    gc.full_reset()
-    gc.full_reset()
     rospy.sleep(stabilize_pause*5)
     while (not rospy.is_shutdown()):
-        print("i: ", i)
-        gc.generate_scene()
-        if i > count:
-            print("Saved %x images" % i)
-            gc.mover_reset()
-            exit()
-
-        # Wait for the scene to stabilize
-        # while not gc.is_stable():
-        #  pass
-        rospy.sleep(stabilize_pause)
-
-        # Save image
-        img_name = ic.save_image()
-        if img_name != "":
-            ic.pop_ref()
-            ic.add_ref(img_name)
-            i += 1
-
-        # Reset scene and wait for objects to leave table
         gc.mover_reset()
+        gc.generate_scene()
         rospy.sleep(stabilize_pause)
-        # hack_i = 0
-        # while not ic.check_blank() and hack_i < 100:
-        #     hack_i += 1
+        rl_state = gc.get_rl_state()
+        print (rl_state.shape)
+        print (rl_state)
+        # Reset scene and wait for objects to leave table
+        rospy.sleep(stabilize_pause)
 
-    print("Saved 0x%x images" % count)
+        i -= 1
+        if i == 0:
+            break
+
     gc.mover_reset()
     exit()
 
