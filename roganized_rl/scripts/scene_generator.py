@@ -36,7 +36,7 @@ TABLE_WIDTH = .58
 HALF_WIDTH = TABLE_WIDTH/2
 TABLE_LENGTH = .58
 HALF_LENGTH = TABLE_LENGTH/2
-BLANK_TABLES = ["blank-table.png", "blank-table-2.png", "blank-table-3.png"]
+BLANK_TABLES = ["blank-table.png", "blank-table-2.png", "blank-table-3.png", "blank-table-4.png"]
 
 
 def random_objects(n, selection=ALL_OBJECTS):
@@ -253,7 +253,7 @@ def main(args):
     ic = ImageSubscriber(img_dir=img_dir, ref_imgs=BLANK_TABLES)
 
     # Loop generating scenes and saving images, with pause to let scene stabilize.
-    stabilize_pause = 0.1
+    stabilize_pause = 0.05
     i = 0
 
     gc.full_reset()
