@@ -69,6 +69,8 @@ if __name__ == '__main__':
     #                 [0,0,0,1]])
     table.spawn()
     
+    
+    batch_num = BATCH_START
     data_dir = setup_base_dir(img_dir)
     cur_dir = update_cur_dir(batch_num, img_dir)
     ref_imgs = []
@@ -76,7 +78,6 @@ if __name__ == '__main__':
         ref_imgs.append(cv2.imread(os.path.join(data_dir, img_name)))
     
     img_count = 0
-    batch_num = BATCH_START
     while not rospy.is_shutdown() and img_count < count:
         n = len(os.listdir(cur_dir))
         
