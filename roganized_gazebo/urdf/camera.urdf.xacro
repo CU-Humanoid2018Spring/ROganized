@@ -44,11 +44,11 @@
      <visualize>false</visualize>
      <update_rate>15.0</update_rate>
      <camera name="front">
-       <horizontal_fov>1.047197</horizontal_fov>
+       <horizontal_fov>0.3491</horizontal_fov>
        <image>
          <!-- openni_kinect plugin works only with BGR8 -->
          <format>B8G8R8</format>
-         <width>640</width>
+         <width>480</width>
          <height>480</height>
        </image>
        <clip>
