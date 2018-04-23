@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<root>
+	<material>wood</material>
+	<mass>0.0565</mass>
+	<cog>0 0 0</cog>
+	<inertia_matrix>2.3541666666666672e-05 0 0 0 2.3541666666666672e-05 0 0 0 2.3541666666666672e-05 </inertia_matrix>
+	<geometryFile type="Inventor">wood_cube_5cm.wrl</geometryFile>
+</root>
