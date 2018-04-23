@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://cafe_table</uri>
+      <name>table1</name>
+      <pose>2.0 0 -0.08 0 0 0</pose>
+    </include>
+    <!--include>
+      <uri>model://test_zone</uri>
+    </include-->
+    <!--include>
+      <uri>model://bowl</uri>
+      <pose>0.7 -0.4 0.75 0.2 0 0.1</pose>
+    </include>
+    <include>
+      <uri>model://cricket_ball</uri>
+      <pose>1.1 0.2 0.75 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://demo_cube</uri>
+      <pose>0.8 0.1 0.75 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://green_hammer</uri>
+      <pose>0.9 0.25 0.75 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://pink_beer</uri>
+      <pose>0.68 -0.25 0.75 0 0 0</pose>
+    </include-->
+    <physics type="ode">
+      <real_time_update_rate>0.000000</real_time_update_rate>
+      <max_step_size>0.001</max_step_size>
+    </physics>
+  </world>
+</sdf>

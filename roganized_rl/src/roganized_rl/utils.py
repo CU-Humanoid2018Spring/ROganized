@@ -242,6 +242,8 @@ class GazeboClient:
             for i, name in enumerate(msg.name):
                 if name in self.models:
                     self.models[name] = msg.pose[i]
+                elif name == 'fetch':
+                    self.robot_pose = msg.pose[i]
                 elif name in self.fixed_models:
                     #rospy.logwarn("Model name %s is fixed", name)
                     pass
@@ -281,10 +283,14 @@ class GazeboClient:
             self.pub.publish(random_pose)
 
     def get_pose(self, name):
+        if name == 'fetch':
+            return self.robot_pose
         return self.models[name]
 
     def set_pose(self, state):
         if self.models and state.model_name in self.models:
+            self.pub.publish(state)
+        elif state.model_name == 'fetch':
             self.pub.publish(state)
         else:
             rospy.logerr("Model name %s doesn't exist", state.model_name)
