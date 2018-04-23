@@ -40,7 +40,6 @@ def setup_base_dir(img_dir, data_dir=DATA_DIR, batch_num=BATCH_START):
     
 def update_cur_dir(batch_num, cur_dir, img_dir):
     """Create new directory for next batch of images. Returns updated batch_num, updated cur_dir."""
-    batch_num += 1
     cur_dir = os.path.join(data_path, img_dir, "batch_" + str(batch_num))
     if not os.path.exists(cur_dir):
         os.makedirs(cur_dir)
@@ -90,7 +89,8 @@ if __name__ == '__main__':
         
         # Create a new batch image directory if needed
         if img_count > 1 and n % BATCH_SIZE == 0:
-            batch_num, cur_dir = update_cur_dir(batch_num, cur_dir, img_dir)
+            batch_num += 1
+            batch_num, cur_dir = update_cur_dir(batch_num, img_dir)
             
         # Get img
         img = img_src.get_rgb()
