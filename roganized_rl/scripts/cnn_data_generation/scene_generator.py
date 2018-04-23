@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-
+###
 # Helper functions for spawning neat and messy scenes.
+# Run: $ rosrun scene_generator.py four_cube four_cube_imgs 30000
+#
+###
 
 from __future__ import print_function
 
