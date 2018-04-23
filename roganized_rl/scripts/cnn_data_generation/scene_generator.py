@@ -262,8 +262,14 @@ def main(args):
 
     # Setup camera for saving images
     ic = ImageSubscriber(img_dir=img_dir, ref_imgs=BLANK_TABLES)
-    if scene_org == 'four_cube':
-      gc.models = {name: gen_rand_pose(name, -5, -5, 0, 3, 3) for name in CUBES}
+    
+    # Add models manually for four_cube
+    if scene_org == random_cube_poses:
+      gc.models = {}
+      for name in CUBES:
+        pose = gen_rand_pose(name, -5, -5, 0, 3, 3)
+        gc.models[name] = pose
+        gc.pub.publish(pose)
 
     # Loop generating scenes and saving images, with pause to let scene stabilize.
     stabilize_pause = 0.05
