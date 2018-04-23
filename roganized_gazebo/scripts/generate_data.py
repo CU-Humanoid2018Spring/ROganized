@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Run: $ rospy roganized_gazebo generate_data.py <img_dir> <count>
+# ex.: $ rospy roganized_gazebo generate_data.py four_cubes 30000
+
 from roganized_gazebo.table_manager import TableManager
 from roganized_rl.utils import ImageConverter
 import cv2
@@ -14,7 +17,7 @@ REFS = ["blank-table.png", "blank-table-2.png", "blank-table-3.png", "blank-tabl
 BATCH_SIZE = 100
 
 
-def setup_base_dir(data_dir=DATA_DIR, batch_num=BATCH_START):
+def setup_base_dir(img_dir, data_dir=DATA_DIR, batch_num=BATCH_START):
     """
         Setup directory within /data/batch_0 for saving images in src/Humanoid-Team2. 
         Creates /data if necessary.
@@ -26,16 +29,15 @@ def setup_base_dir(data_dir=DATA_DIR, batch_num=BATCH_START):
         data_path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
     else:
         data_path = data_dir
-    
-    img_dir = "batch_" + str(batch_num)
+
     if not os.path.exists(os.path.join(data_path, img_dir)):
         os.makedirs(os.path.join(data_path, img_dir))
         print("Making path to ", os.path.join(data_path, img_dir))
     
-    return data_dir, img_dir
+    return data_dir
     
     
-def update_cur_dir(batch_num, cur_dir):
+def update_cur_dir(batch_num, cur_dir, img_dir):
     """Create new directory for next batch of images. Returns updated batch_num, updated cur_dir."""
     batch_num += 1
     cur_dir = os.path.join(data_path, img_dir, "batch_" + str(batch_num))
@@ -47,6 +49,7 @@ def update_cur_dir(batch_num, cur_dir):
 
 
 if __name__ == '__main__':
+    img_dir = sys.argv[1]
     count = 100 if len(sys.argv) < 2 else int(sys.argv[1])
     print("Generating %i images" % count)
     
@@ -59,7 +62,7 @@ if __name__ == '__main__':
     #                 [0,0,0,1]])
     table.spawn()
     
-    data_dir, img_dir = setup_base_dir()
+    data_dir = setup_base_dir(img_dir)
     ref_imgs = []
     for img_name in REFS:
         ref_imgs.append(cv2.imread(os.path.join(data_dir, img_name)))
@@ -79,7 +82,7 @@ if __name__ == '__main__':
         
         # Create a new batch image directory if needed
         if img_count > 1 and n % BATCH_SIZE == 0:
-            batch_num, cur_dir = update_cur_dir(batch_num, cur_dir)
+            batch_num, cur_dir = update_cur_dir(batch_num, cur_dir, img_dir)
             
         # Get img
         img = img_src.get_rgb()
