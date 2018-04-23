@@ -47,6 +47,13 @@ def update_cur_dir(batch_num, cur_dir, img_dir):
     return batch_num, cur_dir
     
 
+def same_img(img, ref):
+    """Check if cv2 images are identical."""
+    identical = (img.shape == ref.shape) and not (np.bitwise_xor(img, ref).any())
+    # if identical:
+    #     print("same image detected")
+    return identical
+    
 
 if __name__ == '__main__':
     img_dir = sys.argv[1]
