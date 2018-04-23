@@ -26,13 +26,14 @@ class TableManager(object):
         x0 = 0.55 + 0.1875
         y0 = 0.0 + 0.1875
         grid_size = 0.125
-        self._loc = []
+        self._grid_poses = []
         for i in range(4):
-            self._loc.append([])
+            self._grid_poses.append([])
             x = x0 - float(i) * grid_size
             for j in range(4):
                 y = y0 - float(j) * grid_size
-                self._loc[-1].append((x,y))
+                pose = Pose(Point(x,y,0.4), Quaternion(0,0,0,1))
+                self._grid_poses[-1].append(pose)
 
     def _gazebo_callback(self, msg):
         models = {}
@@ -46,14 +47,14 @@ class TableManager(object):
         for name, _ in self.models.iteritems():
             if 'cube' in name:
                 delete_model(name)
-            #rospy.loginfo('Import model '+name)
 
     def move_cube(self, id, i, j):
         state = ModelState()
         state.model_name = 'cube_{}'.format(id)
-        x, y = self._loc[i][j]
+        state.pose = self._grid_poses[i][j]
+        x = state.pose.position.x
+        y = state.pose.position.y
         rospy.loginfo('Move {} to ({}, {})'.format(state.model_name, x, y))
-        state.pose = Pose(Point(x, y, 0.5), Quaternion(0,0,0,1))
         self._pub.publish(state)
 
     def spawn(self):
@@ -64,8 +65,9 @@ class TableManager(object):
             cube_xml = f.read()
 
         for i in range(4):
-            x, y = self._loc[0][i%4]
-            cube_pose = Pose(Point(x, y, 0.49), Quaternion(0,0,0,1))
+            cube_pose = self._grid_poses[0][i%4]
+            x = cube_pose.position.x
+            y = cube_pose.position.y
             model_name = 'cube_'+str(i)
             rospy.loginfo('Spawn '+model_name+' at ({},{})'.format(x,y))
             spawn_model(model_name, cube_xml, "", cube_pose, "world")
