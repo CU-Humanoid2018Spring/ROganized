@@ -94,7 +94,7 @@ if __name__ == '__main__':
             
         # Get img
         img = img_src.get_rgb()
-        if sum([same_img(img, ref) for ref in ref_imgs]) == 0:
+        if (not img == None) and (sum([same_img(img, ref) for ref in ref_imgs]) == 0):
             cv2.imwrite(img_path, img)
             img_count += 1
 
