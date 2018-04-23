@@ -11,31 +11,31 @@ import rospy
 import os
 import sys
 
-DATA_DIR = 'data'
+DATA_PATH = 'data'
 BATCH_START = 0
 REFS = ["blank-table.png", "blank-table-2.png", "blank-table-3.png", "blank-table-4.png"]
 BATCH_SIZE = 100
 
 
-def setup_base_dir(img_dir, data_dir=DATA_DIR, batch_num=BATCH_START):
+def setup_base_dir(img_dir, data_path=DATA_PATH, batch_num=BATCH_START):
     """
         Setup directory within /data/batch_0 for saving images in src/Humanoid-Team2. 
         Creates /data if necessary.
-        Returns data_dir, img_dir
+        Returns img_dir
     """
     cwd = os.getcwd()
     if os.path.basename(cwd) == 'Humanoid-Team2':
-        data_path = os.path.join(os.getcwd(), data_dir)
+        data_path = os.path.join(os.getcwd(), data_path)
     elif os.path.basename(cwd) == 'team2_ws':
-        data_path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
+        data_path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_path)
     else:
-        data_path = data_dir
+        data_path = data_path
 
     if not os.path.exists(os.path.join(data_path, img_dir)):
         os.makedirs(os.path.join(data_path, img_dir))
         print("Making path to ", os.path.join(data_path, img_dir))
     
-    return data_path
+    return data_path, batch_num
     
     
 def update_cur_dir(batch_num, img_dir):
@@ -69,13 +69,11 @@ if __name__ == '__main__':
     #                 [0,0,0,1]])
     table.spawn()
     
-    
-    batch_num = BATCH_START
-    data_dir = setup_base_dir(img_dir)
+    data_path, batch_num = setup_base_dir(img_dir)
     cur_dir = update_cur_dir(batch_num, img_dir)
     ref_imgs = []
     for img_name in REFS:
-        ref_imgs.append(cv2.imread(os.path.join(data_dir, img_name)))
+        ref_imgs.append(cv2.imread(os.path.join(data_path, img_name)))
     
     img_count = 0
     while not rospy.is_shutdown() and img_count < count:
