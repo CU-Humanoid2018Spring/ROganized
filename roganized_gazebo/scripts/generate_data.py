@@ -23,4 +23,4 @@ if __name__ == '__main__':
         if img is not None:
             cv2.imshow('demo',img)
             cv2.waitKey(3)
-     cv2.destroyAllWindow()
+    cv2.destroyAllWindows()

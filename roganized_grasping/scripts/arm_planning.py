@@ -9,6 +9,7 @@ from roganized_rl.utils import GazeboClient
 import argparse
 from math import sin, cos, pi
 from copy import deepcopy
+from roganized_gazebo.table_manager import TableManager
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arm Control Pipeline')
     parser.add_argument('-x', type=float, required=True)
@@ -21,9 +22,10 @@ if __name__ == '__main__':
     rospy.init_node('arm_demo')
 
     rospy.loginfo('Waiting for gazebo...')
-    gazebo_client = GazeboClient()
-    rospy.sleep(1)
-    box_pose = gazebo_client.get_pose('demo_cube')
+    table = TableManager()
+    #gazebo_client = GazeboClient()
+    #rospy.sleep(1)
+    box_pose = deep_copy(table.models['cube_0'])
     rospy.loginfo('box pose'+str(box_pose))
 
     # TODO: remove this part once graspit is integrated
