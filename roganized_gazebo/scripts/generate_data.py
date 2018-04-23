@@ -73,7 +73,9 @@ if __name__ == '__main__':
     cur_dir = update_cur_dir(batch_num, img_dir)
     ref_imgs = []
     for img_name in REFS:
-        ref_imgs.append(cv2.imread(os.path.join(data_path, img_name)))
+        img_path = os.path.join(data_path, img_name)
+        print(img_path)
+        ref_imgs.append(cv2.imread(img_path)))
     print(ref_imgs)
 
     img_count = 0
