@@ -74,15 +74,13 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
     return poses
 
   
-CUBE = ['demo_cube']
+CUBES = ['cube_' + str(i) for i in range(4)]
 def random_cube_poses(n=4):
     """Return dictionary of {cube_name: pos} for publishing. """
     poses = {}
-    model_names = random_objects(n=n, selection=CUBE)  # return four cube clone names
-    for group in model_names:
-        for name in group:
-            # Generate a pose on the table and save to dict.
-            poses[name] = gen_rand_pose(name, CENTER_X, CENTER_Y, TABLE_HEIGHT, TABLE_WIDTH - .1, TABLE_LENGTH - .1)
+    for model_name in CUBES:
+        # Generate a pose on the table and save to dict.
+        poses[model_name] = gen_rand_pose(model_name, CENTER_X, CENTER_Y, TABLE_HEIGHT, TABLE_WIDTH - .1, TABLE_LENGTH - .1)
     return poses
   
 
