@@ -5,7 +5,51 @@ from roganized_rl.utils import ImageConverter
 import cv2
 import numpy as np
 import rospy
+import os
+import sys
+
+DATA_DIR = 'data'
+BATCH_START = 0
+REFS = ["blank-table.png", "blank-table-2.png", "blank-table-3.png", "blank-table-4.png"]
+BATCH_SIZE = 100
+
+
+def setup_base_dir(data_dir=DATA_DIR, batch_num=BATCH_START):
+    """
+        Setup directory within /data/batch_0 for saving images in src/Humanoid-Team2. 
+        Creates /data if necessary.
+        Returns data_dir, img_dir
+    """
+    if os.path.basename(cwd) == 'Humanoid-Team2':
+        data_path = os.path.join(os.getcwd(), data_dir)
+    elif os.path.basename(cwd) == 'team2_ws':
+        data_path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_dir)
+    else:
+        data_path = data_dir
+    
+    img_dir = "batch_" + str(batch_num)
+    if not os.path.exists(os.path.join(data_path, img_dir)):
+        os.makedirs(os.path.join(data_path, img_dir))
+        print("Making path to ", os.path.join(data_path, img_dir))
+    
+    return data_dir, img_dir
+    
+    
+def update_cur_dir(batch_num, cur_dir):
+    """Create new directory for next batch of images. Returns updated batch_num, updated cur_dir."""
+    batch_num += 1
+    cur_dir = os.path.join(data_path, img_dir, "batch_" + str(batch_num))
+    if not os.path.exists(cur_dir):
+        os.makedirs(cur_dir)
+        print("Making batch directory: ", cur_dir)
+    return batch_num, cur_dir
+    
+
+
 if __name__ == '__main__':
+    count = 100 if len(sys.argv) < 2 else int(sys.argv[1])
+    print("Generating %i images" % count)
+    
     img_src = ImageConverter()
     table = TableManager()
     table.clear()
@@ -14,13 +58,35 @@ if __name__ == '__main__':
     #                 [1,0,0,0],
     #                 [0,0,0,1]])
     table.spawn()
-    while not rospy.is_shutdown():
+    
+    data_dir, img_dir = setup_base_dir()
+    ref_imgs = []
+    for img_name in REFS:
+        ref_imgs.append(cv2.imread(os.path.join(data_dir, img_name)))
+    
+    img_count = 0
+    batch_num = BATCH_START
+    while not rospy.is_shutdown() and img_count < count:
+        n = len(os.listdir(cur_dir))
+        
+        # Generate scene
         positions = np.random.choice(15,4,replace=False)
         for i, position in enumerate(positions):
             table.move_cube(i, position/4, position%4)
+            
+        # Stabilize
         rospy.sleep(0.2)
+        
+        # Create a new batch image directory if needed
+        if img_count > 1 and n % BATCH_SIZE == 0:
+            batch_num, cur_dir = update_cur_dir(batch_num, cur_dir)
+            
+        # Get img
         img = img_src.get_rgb()
-        if img is not None:
-            cv2.imshow('demo',img)
-            cv2.waitKey(3)
-     cv2.destroyAllWindow()
+        if sum([same_img(img, ref) for ref in ref_imgs]) == 0:
+            cv2.imwrite(img_path, img)
+            img_count += 1
+
+print("Generated %i images in %s" % (img_count, data_path))
+            
+
