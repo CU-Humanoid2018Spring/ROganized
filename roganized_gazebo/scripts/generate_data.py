@@ -13,7 +13,7 @@ import sys
 
 DATA_PATH = 'data'
 BATCH_START = 0
-REFS = ["blank-table.png", "blank-table-2.png", "blank-table-3.png", "blank-table-4.png"]
+REFS = ["blank-table.png", "blank-table-2.png", "blank-table-3.png"]
 BATCH_SIZE = 100
 
 
@@ -74,7 +74,8 @@ if __name__ == '__main__':
     ref_imgs = []
     for img_name in REFS:
         ref_imgs.append(cv2.imread(os.path.join(data_path, img_name)))
-    
+    print(ref_imgs)
+
     img_count = 0
     while not rospy.is_shutdown() and img_count < count:
         n = len(os.listdir(cur_dir))
@@ -94,7 +95,9 @@ if __name__ == '__main__':
             
         # Get img
         img = img_src.get_rgb()
-        if (not img == None) and (sum([same_img(img, ref) for ref in ref_imgs]) == 0):
+        if img is None:
+            continue
+        elif sum([same_img(img, ref) for ref in ref_imgs]) == 0:
             cv2.imwrite(img_path, img)
             img_count += 1
 
