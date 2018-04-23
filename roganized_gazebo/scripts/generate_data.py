@@ -38,13 +38,13 @@ def setup_base_dir(img_dir, data_dir=DATA_DIR, batch_num=BATCH_START):
     return data_dir
     
     
-def update_cur_dir(batch_num, cur_dir, img_dir):
+def update_cur_dir(batch_num, img_dir):
     """Create new directory for next batch of images. Returns updated batch_num, updated cur_dir."""
     cur_dir = os.path.join(data_path, img_dir, "batch_" + str(batch_num))
     if not os.path.exists(cur_dir):
         os.makedirs(cur_dir)
         print("Making batch directory: ", cur_dir)
-    return batch_num, cur_dir
+    return cur_dir
     
 
 def same_img(img, ref):
@@ -70,6 +70,7 @@ if __name__ == '__main__':
     table.spawn()
     
     data_dir = setup_base_dir(img_dir)
+    cur_dir = update_cur_dir(batch_num, img_dir)
     ref_imgs = []
     for img_name in REFS:
         ref_imgs.append(cv2.imread(os.path.join(data_dir, img_name)))
@@ -90,7 +91,7 @@ if __name__ == '__main__':
         # Create a new batch image directory if needed
         if img_count > 1 and n % BATCH_SIZE == 0:
             batch_num += 1
-            batch_num, cur_dir = update_cur_dir(batch_num, img_dir)
+            cur_dir = update_cur_dir(batch_num, img_dir)
             
         # Get img
         img = img_src.get_rgb()
