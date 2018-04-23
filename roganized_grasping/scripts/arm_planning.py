@@ -17,36 +17,39 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print 'Receive x={}, y={}, theta={}'.format(args.x,args.y,args.theta)
 
-    rospy.init_node('arm planner')
+    rospy.init_node('arm_demo')
 
     rospy.loginfo('Waiting for gazebo...')
     gazebo_client = GazeboClient()
-    rospy.sleep(2)
+    rospy.sleep(1)
     box_pose = gazebo_client.get_pose('demo_cube')
+    rospy.loginfo('box pose'+str(box_pose))
+
+    # TODO: remove this part once graspit is integrated
+    target_pose = box_pose
+    target_pose.position.z += 0.15
+    #target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
+    target_pose.orientation = Quaternion(0.371,0.657,0,0.657)
     rospy.loginfo('target pose'+str(target_pose))
-    target_pose.position.z += 0.3
-    #target_pose.orientation = Quaternion(0,0,0,1)
 
-    table_pose = Pose(position=Point(-0.2,-0.2,0.48),orientation=Quaternion(0,0,0,1))
-    target_pose = plan_grasp(GraspitPrimitive('fetch_gripper', None),\
-                             GraspitPrimitive('demo_box', box_pose),\
-                             [GraspitPrimitive('table', table_pose)])
+    # Graspit Pipeline
+    #table_pose = Pose(position=Point(-0.2,-0.2,0.48),orientation=Quaternion(0,0,0,1))
+    #target_pose = plan_grasp(GraspitPrimitive('fetch_gripper', None),\
+    #                         GraspitPrimitive('demo_box', box_pose),\
+    #                         [GraspitPrimitive('table', table_pose)])
 
+    # Arm Trajectory Planning Pipeline
     # Fetch Move Group
     move_group = MoveGroupInterface('arm_with_torso', 'base_link')
 
-    #planning_scene = PlanningSceneInterface('base_link')
     planning_scene = PlanningSceneInterface('base_link')
-    gripper_frame = 'wrist_roll_link' #NOTE: use wrist instead of gripper
+    #gripper_frame = 'wrist_roll_link' #NOTE: use wrist instead of gripper
+    gripper_frame = 'gripper_link' #NOTE: use wrist instead of gripper
 
-    #gripper_pose = Pose(Point(args.x, args.y, 0.75),\
-    #gripper_pose = Pose(Point(args.x, args.y, 1.2),\
-    #                    #Quaternion(0,0.707,0,0.707))
-    #                    Quaternion(0,cos(args.theta/2.),0,sin(args.theta/2.)))
     gripper_pose_stamped = PoseStamped()
     gripper_pose_stamped.header.frame_id = 'base_link'
     gripper_pose_stamped.header.stamp = rospy.Time.now()
-    gripper_pose_stamped.pose = gripper_pose
+    gripper_pose_stamped.pose = target_pose
     move_group.moveToPose(gripper_pose_stamped, gripper_frame)
     result = move_group.get_move_action().get_result()
 
