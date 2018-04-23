@@ -35,7 +35,7 @@ def setup_base_dir(img_dir, data_dir=DATA_DIR, batch_num=BATCH_START):
         os.makedirs(os.path.join(data_path, img_dir))
         print("Making path to ", os.path.join(data_path, img_dir))
     
-    return data_dir
+    return data_path
     
     
 def update_cur_dir(batch_num, img_dir):
