@@ -23,6 +23,7 @@ def setup_base_dir(img_dir, data_dir=DATA_DIR, batch_num=BATCH_START):
         Creates /data if necessary.
         Returns data_dir, img_dir
     """
+    cwd = os.getcwd()
     if os.path.basename(cwd) == 'Humanoid-Team2':
         data_path = os.path.join(os.getcwd(), data_dir)
     elif os.path.basename(cwd) == 'team2_ws':
@@ -57,7 +58,7 @@ def same_img(img, ref):
 
 if __name__ == '__main__':
     img_dir = sys.argv[1]
-    count = 100 if len(sys.argv) < 2 else int(sys.argv[1])
+    count = 100 if len(sys.argv) < 2 else int(sys.argv[2])
     print("Generating %i images" % count)
     
     img_src = ImageConverter()
