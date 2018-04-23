@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-
+###
 # Helper functions for spawning neat and messy scenes.
+# Run: $ rosrun scene_generator.py four_cube four_cube_imgs 30000
+#
+###
 
 from __future__ import print_function
 
@@ -70,6 +73,18 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
             poses[name] = gen_rand_pose(name, CENTER_X, CENTER_Y, TABLE_HEIGHT, TABLE_WIDTH - .1, TABLE_LENGTH - .1)
     return poses
 
+  
+CUBE = ['demo_cube']
+def random_cube_poses(n=4):
+    """Return dictionary of {cube_name: pos} for publishing. """
+    poses = {}
+    model_names = random_objects(n=n, selection=CUBE)  # return four cube clone names
+    for group in model_names:
+        for name in group:
+            # Generate a pose on the table and save to dict.
+            poses[name] = gen_rand_pose(name, CENTER_X, CENTER_Y, TABLE_HEIGHT, TABLE_WIDTH - .1, TABLE_LENGTH - .1)
+    return poses
+  
 
 def linear_points(objs, cx=CENTER_X, cy=CENTER_Y,
                   dx=HALF_WIDTH, dy=HALF_LENGTH, types_along_x=True):
@@ -223,7 +238,8 @@ SCENE_ORGS = {
     'messy': random_poses,
     'neat_linear': neat_linear_poses,
     'neat_cluster': neat_cluster_poses,
-    'neat_polygon': neat_polygon_poses
+    'neat_polygon': neat_polygon_poses,
+    'four_cube': random_cube_poses
 }
 
 
