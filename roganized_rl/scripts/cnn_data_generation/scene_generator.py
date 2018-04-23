@@ -75,7 +75,7 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
 
   
 CUBES = ['cube_' + str(i) for i in range(4)]
-def random_cube_poses(n=4):
+def random_cube_poses(n=4, mincount=MIN_OBJ, maxcount=MAX_OBJ):
     """Return dictionary of {cube_name: pos} for publishing. """
     poses = {}
     for model_name in CUBES:
