@@ -12,20 +12,21 @@ from copy import deepcopy
 from roganized_gazebo.table_manager import TableManager
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arm Control Pipeline')
-    parser.add_argument('-x', type=float, required=True)
-    parser.add_argument('-y', type=float, required=True)
-    parser.add_argument('-t', '--theta', type=float, required=True)
+    parser.add_argument('-c', type=int, required=True)
+    parser.add_argument('-x', type=int, required=True)
+    parser.add_argument('-y', type=int, required=True)
+    #parser.add_argument('-t', '--theta', type=float, required=True)
 
     args = parser.parse_args()
-    print 'Receive x={}, y={}, theta={}'.format(args.x,args.y,args.theta)
+    print 'Move cube {} to x={}, y={}'.format(args.c, args.x,args.y)
 
-    rospy.init_node('arm_demo')
+    #rospy.init_node('arm_demo')
 
     rospy.loginfo('Waiting for gazebo...')
     table = TableManager()
     #gazebo_client = GazeboClient()
     #rospy.sleep(1)
-    box_pose = deep_copy(table.models['cube_0'])
+    box_pose = table.models['cube_'+str(args.c)]
     rospy.loginfo('box pose'+str(box_pose))
 
     # TODO: remove this part once graspit is integrated
@@ -37,6 +38,13 @@ if __name__ == '__main__':
         goals.append(target_pose)
     #target_pose.orientation = Quaternion(0,0,0,1)
 
+
+    box_pose = table._grid_poses[args.x][args.y]
+    for height in [0.15, 0.03]:
+        target_pose = deepcopy(box_pose)
+        target_pose.position.z += height
+        target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
+        goals.append(target_pose)
     # Graspit Pipeline
     #table_pose = Pose(position=Point(-0.2,-0.2,0.48),orientation=Quaternion(0,0,0,1))
     #table_pose = Pose(position=Point(0.6,-0.8,0.95),orientation=Quaternion(0,0,0,1))
