@@ -8,14 +8,14 @@
     <include file="$(find fetch_moveit_config)/launch/move_group.launch" > 
       <arg name="info" value="true"/><!-- publish grasp markers -->
     </include>
-
+    <include file="$(find graspit_interface)/launch/graspit_interface.launch"/>
     <!-- Start navigation -->
     <!--include file="$(find fetch_gazebo_demo)/launch/fetch_nav.launch" /-->
 
     <!-- Start Perception -->                                                     
-    <node name="basic_grasping_perception" pkg="simple_grasping" type="basic_grasping_perception" >
+    <!--node name="basic_grasping_perception" pkg="simple_grasping" type="basic_grasping_perception" >
       <rosparam command="load" file="$(find fetch_gazebo_demo)/config/simple_grasping.yaml" />
-    </node>
+    </node-->
   </group>
 
   <!--group ns="11315"-->
@@ -36,7 +36,7 @@
   <arg name="model" default="$(find roganized_gazebo)/urdf/camera.urdf.xacro"/>
   <param name="camera_description" command="$(find xacro)/xacro $(arg model)" />
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
-        args="-urdf -x 2.0 -z 1.8 -param camera_description -model camera" />
+        args="-urdf -x 0.9 -z 1.6 -param camera_description -model camera" />
   <!--/group-->
 
   <!-- RViz -->

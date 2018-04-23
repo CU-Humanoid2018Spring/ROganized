@@ -3,8 +3,11 @@ from geometry_msgs.msg import Quaternion, Pose, Point
 from roganized_grasping.wrapper import plan_grasp, GraspitPrimitive
 
 def demo():
-    obj_pose = Pose(position=Point(0.0,0,0),orientation=Quaternion(0.707,0,0,-0.707))
-    table_pose = Pose(position=Point(-0.2,-0.2,0.48),orientation=Quaternion(0,0,0,1))
+    #obj_pose = Pose(position=Point(0.666,-0.3,0.8),orientation=Quaternion(0,0,0,1))
+    #obj_pose = Pose(position=Point(0.0,0,0),orientation=Quaternion(0.707,0,0,-0.707))
+    obj_pose = Pose(position=Point(0.666,0,0.8),orientation=Quaternion(0.707,0,0,-0.707))
+    #table_pose = Pose(position=Point(-0.2,-0.2,0.48),orientation=Quaternion(0,0,0,1))
+    table_pose = Pose(position=Point(0.8,-0.8,1.28),orientation=Quaternion(0,0,0,1))
     gripper_pose = Pose(position=Point(0,0,0.3),orientation=Quaternion(0,0.707,0,0.707))
     pose = plan_grasp(GraspitPrimitive('fetch_gripper', gripper_pose),\
                       GraspitPrimitive('cricket_ball', obj_pose),\
