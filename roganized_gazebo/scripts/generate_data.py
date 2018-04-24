@@ -73,16 +73,11 @@ if __name__ == '__main__':
     cur_dir = update_cur_dir(batch_num, img_dir)
     ref_imgs = []
     for img_name in REFS:
-<<<<<<< HEAD
-        ref_imgs.append(cv2.imread(os.path.join(data_path, img_name)))
-    print(ref_imgs)
-
-=======
         img_path = os.path.join(data_path, img_name)
         print(img_path)
-        ref_imgs.append(cv2.imread(img_path))
-    
->>>>>>> 17e210cdaaf03443fd534f90b72fde18f77303f4
+        ref_imgs.append(cv2.imread(img_path)))
+    print(ref_imgs)
+
     img_count = 0
     while not rospy.is_shutdown() and img_count < count:
         n = len(os.listdir(cur_dir))
