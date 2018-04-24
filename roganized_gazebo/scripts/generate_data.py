@@ -19,15 +19,15 @@ BATCH_SIZE = 100
 
 def setup_base_dir(img_dir, data_path=DATA_PATH, batch_num=BATCH_START):
     """
-        Setup directory within /data/batch_0 for saving images in src/Humanoid-Team2. 
+        Setup directory within /data/batch_0 for saving images in src/ROganized. 
         Creates /data if necessary.
         Returns img_dir
     """
     cwd = os.getcwd()
-    if os.path.basename(cwd) == 'Humanoid-Team2':
+    if os.path.basename(cwd) == 'ROganized':
         data_path = os.path.join(os.getcwd(), data_path)
     elif os.path.basename(cwd) == 'team2_ws':
-        data_path = os.path.join(os.getcwd(), "src/Humanoid-Team2", data_path)
+        data_path = os.path.join(os.getcwd(), "src/ROganized", data_path)
     else:
         data_path = data_path
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     for img_name in REFS:
         img_path = os.path.join(data_path, img_name)
         print(img_path)
-        ref_imgs.append(cv2.imread(img_path)))
+        ref_imgs.append(cv2.imread(img_path))
     print(ref_imgs)
 
     img_count = 0
