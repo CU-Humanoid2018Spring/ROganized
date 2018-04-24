@@ -15,6 +15,8 @@ DATA_PATH = 'data'
 BATCH_START = 0
 REFS = ["blank-table.png", "blank-table-2.png", "blank-table-3.png"]
 BATCH_SIZE = 100
+prefix = 'scene'
+suffix = '.png'
 
 
 def setup_base_dir(img_dir, data_path=DATA_PATH, batch_num=BATCH_START):
@@ -102,6 +104,8 @@ if __name__ == '__main__':
         if img is None:
             continue
         elif sum([same_img(img, ref) for ref in ref_imgs]) == 0:
+            img_name = prefix + str(img_count) + suffix
+            img_path = os.path.join(cur_dir, img_name)
             cv2.imwrite(img_path, img)
             img_count += 1
 
