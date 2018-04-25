@@ -11,6 +11,7 @@ import rospy
 import os
 import sys
 
+TEAM_DIR = 'Humanoid-Team2' # 'ROganized' Use name of your workspace/src/<team_dir>
 DATA_PATH = 'data'
 BATCH_START = 0
 REFS = ["blank-table.png", "blank-table-2.png", "blank-table-3.png"]
@@ -26,12 +27,12 @@ def setup_base_dir(img_dir, data_path=DATA_PATH, batch_num=BATCH_START):
         Returns img_dir
     """
     cwd = os.getcwd()
-    if os.path.basename(cwd) == 'ROganized':
+    if os.path.basename(cwd) == TEAM_DIR:
         data_path = os.path.join(os.getcwd(), data_path)
     elif os.path.basename(cwd) == 'team2_ws':
-        data_path = os.path.join(os.getcwd(), "src/ROganized", data_path)
+        data_path = os.path.join(os.getcwd(), "src", TEAM_DIR, data_path)
     elif os.path.basename(cwd) == 'src':
-        data_path = os.path.join(os.getcwd(), "ROganized", data_path)
+        data_path = os.path.join(os.getcwd(), TEAM_DIR, data_path)
     else:
         data_path = data_path
 
@@ -68,7 +69,7 @@ if __name__ == '__main__':
     data_path, batch_num = setup_base_dir(img_dir)
     cur_dir = update_cur_dir(batch_num, img_dir)
     
-    print("Generating %i images in directory %s" % (count, os.join(data_path, img_dir)))
+    print("Generating %i images in directory %s" % (count, os.path.join(data_path, img_dir)))
     
     # Setup blank table images to filter out
     ref_imgs = []
@@ -78,6 +79,7 @@ if __name__ == '__main__':
         ref_imgs.append(cv2.imread(ref_path))
     failed_imgs = [i for i, img in enumerate(ref_imgs) if img is None]
     if len(failed_imgs) > 0:
+        print(failed_imgs)
         print("The following reference images failed to load:", REFS[failed_imgs])
     
     # Initialize ROS managers
@@ -101,7 +103,7 @@ if __name__ == '__main__':
         
         # Create a new batch image directory if needed, saving .npy file first.
         if img_count > 1 and n % BATCH_SIZE == 0:
-            scores_path = os.join(cur_dir, "batch_%i_scores" % batch_num)
+            scores_path = os.path.join(cur_dir, "batch_%i_scores" % batch_num)
             np.save(scores_path, scores)
             scores = []
             batch_num += 1
