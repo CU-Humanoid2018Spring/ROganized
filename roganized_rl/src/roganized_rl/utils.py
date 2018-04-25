@@ -116,7 +116,7 @@ class GripperClient(object):
         self.open = True
         self.cmd = GripperCommandGoal()
         self.cmd.command.position = 0.3
-        self.cmd.command.max_effort = 2.0
+        self.cmd.command.max_effort = 1.2
         self.client.send_goal(self.cmd)
         self.client.wait_for_result()
 

@@ -40,8 +40,8 @@
   <!--/group-->
 
   <!-- RViz -->
-  <!--group if="$(arg display)">
+  <!--group if="$(arg display)"-->
     <arg name="rvizconfig" value="$(find roganized_gazebo)/config/camera.rviz"/>
     <node name="rviz" pkg="rviz" type="rviz" required="false" args="-d $(arg rvizconfig)" />
-  </group-->
+  <!--/group-->
 </launch>
