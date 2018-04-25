@@ -105,6 +105,7 @@ if __name__ == '__main__':
         if img_count > 1 and n % BATCH_SIZE == 0:
             scores_path = os.path.join(cur_dir, "batch_%i_scores" % batch_num)
             np.save(scores_path, scores)
+            print("Finished batch %i and saved scores to %s" %(batch_num, scores_path))
             scores = []
             batch_num += 1
             cur_dir = update_cur_dir(batch_num, img_dir)
