@@ -13,29 +13,28 @@ from copy import deepcopy
 from roganized_gazebo.table_manager import TableManager
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arm Control Pipeline')
-    #parser.add_argument('-c', type=int, required=True)
+    parser.add_argument('-c', type=int, required=True)
     parser.add_argument('-x', type=float, required=True)
     parser.add_argument('-y', type=float, required=True)
-    #parser.add_argument('-t', '--theta', type=float, required=True)
 
     args = parser.parse_args()
-    #print 'Move cube {} to x={}, y={}'.format(args.c, args.x,args.y)
-
-    #rospy.init_node('arm_demo')
 
     rospy.loginfo('Waiting for gazebo...')
     table = TableManager()
     gazebo_client = GazeboClient()
     gripper = GripperClient()
     rospy.sleep(1)
-    box_pose = gazebo_client.get_pose('simple_cube')
     planning_scene = PlanningSceneInterface('base_link')
     planning_scene.clear()
-    planning_scene.addBox("table", 0.6, 0.6, 0.02, 0.9, 0, 0.34)
-    planning_scene.addCube("cube", 0.06, box_pose.position.x, box_pose.position.y, box_pose.position.z)
-    #box_pose = table.models['cube_'+str(args.c)]
-    #rospy.loginfo('box pose'+str(box_pose))
+    for name, pose in table.models.iteritems():
+        if 'cube' in name:
+            planning_scene.addCube(name, 0.06, pose.position.x,\
+                                   pose.position.y, pose.position.z)
+    planning_scene.addBox("table", 0.5, 0.5, 0.02, 0.55, 0, 0.32)
+    box_pose = table.models['cube_'+str(args.c)]
+    rospy.loginfo('box {}: {}'.format(args.c,box_pose))
 
+    '''
     # TODO: remove this part once graspit is integrated
     goals = []
     for height in [0.15, 0.03, 0.15]:
@@ -90,3 +89,4 @@ if __name__ == '__main__':
                                move_group.get_move_action().get_state())
         else:
             rospy.logerr('MoveIt failure. No result returned')
+    '''
