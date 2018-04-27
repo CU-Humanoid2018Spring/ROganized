@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import actionlib
+from control_msgs.msg import GripperCommandAction, GripperCommandGoal 
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 from graspit_commander import GraspitCommander
 import rospy
@@ -33,3 +35,25 @@ def demo2():
                       GraspitPrimitive('mug', mug_pose),\
                       [GraspitPrimitive('table', table_pose)])
     return pose
+
+class FetchGripper(object):
+    def __init__(self):
+        self.client = actionlib.SimpleActionClient("gripper_controller/gripper_action", \
+                                                   GripperCommandAction)
+        rospy.loginfo("Waiting for gripper controller")
+        self.client.wait_for_server()
+        self.cmd = GripperCommandGoal()
+        self.cmd.command.position = 0.06
+        self.cmd.command.max_effort = 3.0
+        self.client.send_goal(self.cmd)
+        self.client.wait_for_result()
+
+    def open(self):
+        self.cmd.command.position = 0.06
+        self.client.send_goal(self.cmd)
+        self.client.wait_for_result()
+
+    def close(self):
+        self.cmd.command.position = 0.0
+        self.client.send_goal(self.cmd)
+        self.client.wait_for_result()
