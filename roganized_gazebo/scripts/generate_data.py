@@ -49,7 +49,7 @@ def update_cur_dir(batch_num, full_img_dir):
     cur_dir = os.path.join(full_img_dir, "batch_" + str(batch_num))
     if not os.path.exists(cur_dir):
         os.makedirs(cur_dir)
-        print("Making batch directory: ", cur_dir)
+        print "Making batch directory: ", cur_dir
     return cur_dir
     
 
@@ -120,7 +120,7 @@ if __name__ == '__main__':
             scores = []
             poses = []
             batch_num += 1
-            cur_dir = update_cur_dir(batch_num, img_dir)
+            cur_dir = update_cur_dir(batch_num, full_img_dir)
             
         # Get img and score
         img = img_src.get_rgb()
