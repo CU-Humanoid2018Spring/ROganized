@@ -4,38 +4,113 @@ import rospy
 from moveit_msgs.msg import MoveItErrorCodes
 from moveit_python import MoveGroupInterface, PlanningSceneInterface
 from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
-from roganized_grasping.wrapper import plan_grasp, GraspitPrimitive
-from roganized_rl.utils import GripperClient
-from roganized_rl.utils import GazeboClient
+from roganized_grasping.wrapper import plan_grasp, GraspitPrimitive, FetchGripper
 import argparse
 from math import sin, cos, pi
 from copy import deepcopy
 from roganized_gazebo.table_manager import TableManager
-if __name__ == '__main__':
+
+class FetchArm(object):
+    def __init__(self):
+        self._move_group = MoveGroupInterface('arm_with_torso', 'base_link')
+        self._gripper_frame = 'gripper_link'
+
+    def plan_motion(self, target_pose):
+        # Convert pose
+        gripper_pose_stamped = PoseStamped()
+        gripper_pose_stamped.header.frame_id = 'base_link'
+        gripper_pose_stamped.header.stamp = rospy.Time.now()
+        gripper_pose_stamped.pose = target_pose
+
+        # Motion planning request
+        self._move_group.moveToPose(gripper_pose_stamped, self._gripper_frame)
+        result = self._move_group.get_move_action().get_result()
+
+        if result:
+            if result.error_code.val == MoveItErrorCodes.SUCCESS:
+                rospy.loginfo('Move Success!')
+                return True
+            else:
+                rospy.logerr('Arm goal in state: %s',\
+                               self._move_group.get_move_action().get_state())
+                return False
+        else:
+            rospy.logerr('MoveIt failure. No result returned')
+            return False
+
+def main():
     parser = argparse.ArgumentParser(description='Arm Control Pipeline')
-    #parser.add_argument('-c', type=int, required=True)
-    parser.add_argument('-x', type=float, required=True)
-    parser.add_argument('-y', type=float, required=True)
-    #parser.add_argument('-t', '--theta', type=float, required=True)
-
+    parser.add_argument('-c', type=int, required=True)
+    parser.add_argument('-x', type=int, required=True)
+    parser.add_argument('-y', type=int, required=True)
     args = parser.parse_args()
-    #print 'Move cube {} to x={}, y={}'.format(args.c, args.x,args.y)
 
-    #rospy.init_node('arm_demo')
-
-    rospy.loginfo('Waiting for gazebo...')
+    rospy.loginfo('Initializing...')
     table = TableManager()
-    gazebo_client = GazeboClient()
-    gripper = GripperClient()
+    gripper = FetchGripper()
     rospy.sleep(1)
-    box_pose = gazebo_client.get_pose('simple_cube')
+
     planning_scene = PlanningSceneInterface('base_link')
     planning_scene.clear()
-    planning_scene.addBox("table", 0.6, 0.6, 0.02, 0.9, 0, 0.34)
-    planning_scene.addCube("cube", 0.06, box_pose.position.x, box_pose.position.y, box_pose.position.z)
-    #box_pose = table.models['cube_'+str(args.c)]
-    #rospy.loginfo('box pose'+str(box_pose))
+    for name, pose in table.models.iteritems():
+        if 'cube' in name:
+            planning_scene.addCube(name, 0.045, pose.position.x,\
+                                   pose.position.y, pose.position.z)
 
+    planning_scene.addBox("table", 0.5, 0.5, 0.02, 0.55, 0, 0.32)
+
+    box_pose = table.models['cube_'+str(args.c)]
+    rospy.loginfo('box {}: {}'.format(args.c,box_pose))
+
+    arm = FetchArm()
+    target_pose = deepcopy(box_pose)
+    target_pose.position.z += 0.15
+    target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
+    arm.plan_motion(target_pose)
+
+    target_pose.position.z -= 0.12
+    arm.plan_motion(target_pose)
+    print 'remove cube_{}'.format(args.c)
+    planning_scene.removeCollisionObject('cube_{}'.format(args.c))
+    gripper.close()
+
+    target_pose.position.z += 0.12
+    arm.plan_motion(target_pose)
+
+    target_pose = deepcopy(table._grid_poses[args.x][args.y])
+    print 'destination pose: {}'.format(target_pose)
+    target_pose.position.z += 0.15
+    target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
+    arm.plan_motion(target_pose)
+
+    target_pose.position.z -= 0.12
+    arm.plan_motion(target_pose)
+    gripper.open()
+
+    target_pose.position.z += 0.12
+    arm.plan_motion(target_pose)
+
+    name = 'cube_{}'.format(args.c)
+    pose = table.models[name]
+    planning_scene.addCube(name, 0.045, pose.position.x,\
+                           pose.position.y, pose.position.z)
+    '''
+    target_pose = deepcopy(table._grid_poses[args.x][args.y])
+    target_pose.position.z += 0.15
+    target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
+    arm.plan_motion(target_pose)
+
+    target_pose.position.z -= 0.12
+    arm.plan_motion(target_pose)
+    gripper.open()
+
+    target_pose.position.z += 0.12
+    arm.plan_motion(target_pose)
+    '''
+
+if __name__ == '__main__':
+    main()
+    '''
     # TODO: remove this part once graspit is integrated
     goals = []
     for height in [0.15, 0.03, 0.15]:
@@ -90,3 +165,4 @@ if __name__ == '__main__':
                                move_group.get_move_action().get_state())
         else:
             rospy.logerr('MoveIt failure. No result returned')
+    '''
