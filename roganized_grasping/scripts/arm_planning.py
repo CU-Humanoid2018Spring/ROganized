@@ -59,7 +59,7 @@ def main():
             p = relative_pose(robot_pose, pose)
             planning_scene.addCube(name, 0.045, p.position.x,\
                                    p.position.y, p.position.z)
-    return
+    #return
     planning_scene.addBox("table", 0.5, 0.5, 0.02, 0.55, 0, 0.32)
 
     robot_pose = table.models['fetch']
@@ -84,8 +84,8 @@ def main():
 
     #target_pose = deepcopy(table._grid_poses[args.x][args.y])
     robot_pose = table.models['fetch']
-    robot_pose = table.models['fetch']
-    box_pose = table.models['cube_'+str(args.c)]
+    #box_pose = table.models['cube_'+str(args.c)
+    box_pose = table._grid_poses[args.x][args.y]
     target_pose = relative_pose(robot_pose, box_pose)
     target_pose.position.z += 0.15
     target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
