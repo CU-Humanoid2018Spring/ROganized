@@ -127,8 +127,8 @@ class OrganizeEnv(gym.Env):
         self.sess = tf.get_default_session()
         self.evaluator.initialize(sess)
     def train_learner(self):
-        self.train_org_learner()
-        # self.evaluator.restore()
+        # self.train_org_learner()
+        self.evaluator.restore()
         #valid = load_data('./data')
         #print('Valid Accuracy: '+str(self.test(valid)))
         #valid = load_data('./valid')

@@ -241,10 +241,11 @@ def load_data(path):
             x = cv2.imread(image_file)
             x = cv2.resize(x, (320, 240))
             X.append(x)
-            Y.append(y[i]/6.0)
+            Y.append(0.107+y[i]/6.0)
         # img_path = path+'/images/'+score_file.split('/')[-1][:-11]
         # images = get_files_in_dir(img_path)
         # scores = np.load(score_file)
+    print(min(Y))
     print(max(Y))
     return X, Y
 
