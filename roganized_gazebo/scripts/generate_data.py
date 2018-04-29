@@ -36,19 +36,20 @@ def setup_base_dir(img_dir, data_path=DATA_PATH, batch_num=BATCH_START):
     else:
         data_path = data_path
 
-    if not os.path.exists(os.path.join(data_path, img_dir)):
-        os.makedirs(os.path.join(data_path, img_dir))
-        print("Making path to ", os.path.join(data_path, img_dir))
+    full_img_dir = os.path.join(data_path, img_dir)
+    if not os.path.exists(full_img_dir):
+        os.makedirs(full_img_dir)
+        print("Making path to ", full_img_dir)
     
-    return data_path, batch_num
+    return data_path, full_img_dir, batch_num
     
     
-def update_cur_dir(batch_num, img_dir):
+def update_cur_dir(batch_num, full_img_dir):
     """Create new directory for next batch of images. Returns updated cur_dir path."""
-    cur_dir = os.path.join(data_path, img_dir, "batch_" + str(batch_num))
+    cur_dir = os.path.join(full_img_dir, "batch_" + str(batch_num))
     if not os.path.exists(cur_dir):
         os.makedirs(cur_dir)
-        print("Making batch directory: ", cur_dir)
+        print "Making batch directory: ", cur_dir
     return cur_dir
     
 
@@ -61,21 +62,24 @@ def same_img(img, ref):
     
 
 if __name__ == '__main__':
+
+    if len(sys.argv) < 3:
+        print("USAGE: generate_data.py <out_dir> <#_images>")
+
     # Capture input args <img_dir> and <num_images>
     img_dir = sys.argv[1]
     count = 100 if len(sys.argv) < 2 else int(sys.argv[2])
     
     # Setup working paths
-    data_path, batch_num = setup_base_dir(img_dir)
-    cur_dir = update_cur_dir(batch_num, img_dir)
+    data_path, full_img_dir, batch_num = setup_base_dir(img_dir)
+    cur_dir = update_cur_dir(batch_num, full_img_dir)
+    print("Generating %i images in directory %s" % (count, full_img_dir))
     
-    print("Generating %i images in directory %s" % (count, os.path.join(data_path, img_dir)))
-    
-    # Setup blank table images to filter out
+    # Read blank table reference images to filter out
     ref_imgs = []
     for img_name in REFS:
         ref_path = os.path.join(data_path, img_name)
-        print(ref_path)
+        print("Using ref image ", ref_path)
         ref_imgs.append(cv2.imread(ref_path))
     failed_imgs = [i for i, img in enumerate(ref_imgs) if img is None]
     if len(failed_imgs) > 0:
@@ -90,6 +94,7 @@ if __name__ == '__main__':
 
     img_count = 0
     scores = []
+    poses = []
     while not rospy.is_shutdown() and img_count < count:
         n = len(os.listdir(cur_dir))
         
@@ -101,18 +106,27 @@ if __name__ == '__main__':
         # Stabilize
         rospy.sleep(0.2)
         
-        # Create a new batch image directory if needed, saving .npy file first.
-        if img_count > 1 and n % BATCH_SIZE == 0:
-            scores_path = os.path.join(cur_dir, "batch_%i_scores" % batch_num)
+        # Save .npy files of scores and poses before creating a new batch or if finished image generation.
+        if img_count > 1 and (n % BATCH_SIZE == 0):
+
+            # Save scores and poses
+            scores_path = os.path.join(cur_dir, "scores.npy")
             np.save(scores_path, scores)
-            print("Finished batch %i and saved scores to %s" %(batch_num, scores_path))
+            poses_path = os.path.join(cur_dir, "poses.npy")
+            np.save(poses_path, poses)
+            print("Saved batch %i scores and poses" % (batch_num))
+
+            # Reset and create new batch dir
             scores = []
+            poses = []
             batch_num += 1
-            cur_dir = update_cur_dir(batch_num, img_dir)
+            cur_dir = update_cur_dir(batch_num, full_img_dir)
             
         # Get img and score
         img = img_src.get_rgb()
         score = table.score()
+
+        # Check if new image should be save; save if so.
         if img is None:
             continue
         elif sum([same_img(img, ref) for ref in ref_imgs]) == 0:
@@ -120,6 +134,14 @@ if __name__ == '__main__':
             img_path = os.path.join(cur_dir, img_name)
             cv2.imwrite(img_path, img)
             scores.append(score)
+            poses.append(positions)
             img_count += 1
 
-    print("Generated %i images in %s" % (img_count, data_path))
+    # Save scores and poses for last batch
+    scores_path = os.path.join(cur_dir, "scores.npy")
+    np.save(scores_path, scores)
+    poses_path = os.path.join(cur_dir, "poses.npy")
+    np.save(poses_path, poses)
+    print("Saved batch %i scores and poses" % (batch_num))
+
+    print("%i images now in %s" % (img_count, full_img_dir))
