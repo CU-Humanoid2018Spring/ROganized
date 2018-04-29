@@ -8,6 +8,7 @@ import time
 from baselines.organized_learner import OrgLearner, load_data
 from baselines.scene_generator import random_poses
 from roganized.utils import GazeboClient, ImageConverter
+from roganized_gazebo.table_manager import TableManager
 import rospy
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
@@ -30,8 +31,9 @@ class OrganizeEnv(gym.Env):
 
 
         rospy.init_node("rl_env")
-        self.gazebo_client = GazeboClient(obj_mover=random_poses, min_objs=4, max_objs=6,
-                                          fixed_models = ['table', 'fetch', 'ground_plane', 'camera', 'sun'])
+        self.table = TableManager()
+        self.table.clear()
+        self.table.spawn()
         self.image_sub = ImageConverter()
         self.reset()
  
@@ -145,27 +147,32 @@ class OrganizeEnv(gym.Env):
         #new_state.model_name = self.decoder[obj_id]
         #new_state.pose = Pose( Point(x_to,y_to, 0.7), Quaternion(0,0,0,0))
         #new_state.pose.orientaion = rotate_z(new_state.pose, 0, 0, theta_to)
-        #self.gazebo_client.gazebo_client.set_pose(new_state)
-        new_state = ModelState()
+        #new_state = ModelState()
         if self.decoder[obj_id] is not None:
-            new_state.model_name = self.decoder[obj_id]
-            new_state.pose = Pose( Point(x_to,y_to, 0.7),\
-                                   Quaternion(0,0,0,1))
-            new_state.pose.orientation = rotate(new_state.pose, 0, 0, theta_to)
-            self.gazebo_client.set_pose(new_state)
+            #new_state.model_name = self.decoder[obj_id]
+            #new_state.pose = Pose( Point(x_to,y_to, 0.7),\
+            #                       Quaternion(0,0,0,1))
+            #new_state.pose.orientation = rotate(new_state.pose, 0, 0, theta_to)
+            self.table.move_cube(obj_id, x_to, y_to)
 
 
     # This needs to be connected to our environment to do anything
     # Need not return anything, juse needs to randomly initialize the gazebo env
     def __init_episode__(self):
-       self.gazebo_client.mover_reset()
-       self.gazebo_client.generate_scene()
-       rospy.sleep(0.1)
+        grids = 5
+        positions = np.random.choice(grids*grids-1,4,replace=False)
+        for i, position in enumerate(positions):
+            self.table.move_cube(i, position/grids, position%grids)
+        rospy.sleep(0.1)
 
     # This needs to be connected to our environment to do anything
     # Should return a numpy array of dimensions [self.w, self.h, 3]
     def __get_obs__(self):
-        obs_list = self.gazebo_client.get_rl_state()
+        obs_list = []
+        for i in range(4):
+            p = table.models['cube_{}'.format(i)].position
+            q = table.models['cube_{}'.format(i)].orientation
+            obs_list.append([i, p.x, p.y, p.z, q.x, q.y, q.z, q.w])
         obs_array = np.zeros([60,60], dtype=np.uint8)
         names = dict()
         self.decoder = [None]
