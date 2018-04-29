@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<root>
+	<material>glass</material>
+	<mass>0.390</mass>
+	<cog>0 0 0</cog>
+	<inertia_matrix>0.00058 0 0 0 0.00058 0 0 0 0.00019 </inertia_matrix>
+	<geometryFile type="Inventor">beer.wrl</geometryFile>
+</root>

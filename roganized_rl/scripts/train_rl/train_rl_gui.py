@@ -3,9 +3,9 @@
 # Training the reinforcement learning model
 # Author: Yan-Song Chen, Columbia University 2018
 import rospy
-from utils import MoveBaseClient, FollowTrajectoryClient, GazeboClient,\
-                  PointHeadClient, GripperClient, GraspingClient, RL, \
-		  ImageSubscriber
+from roganized_rl.utils import MoveBaseClient, FollowTrajectoryClient,\
+                               GazeboClient, PointHeadClient, GripperClient,\
+                               GraspingClient, RL, ImageSubscriber
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate

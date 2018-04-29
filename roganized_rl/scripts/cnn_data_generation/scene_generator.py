@@ -1,10 +1,12 @@
 #!/usr/bin/env python
-
+###
 # Helper functions for spawning neat and messy scenes.
+# Run: $ rosrun scene_generator.py four_cube four_cube_imgs 30000
+#
+###
 
 from __future__ import print_function
 
-import roslib
 import sys
 import random
 import rospy
@@ -14,9 +16,7 @@ import numpy as np
 from gazebo_msgs.msg import ModelStates
 from collections import Counter
 
-from utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
-
-roslib.load_manifest('roganized_rl')
+from roganized_rl.utils import ImageSubscriber, GazeboClient, gen_pose, gen_rand_pose
 
 models = ModelStates()
 FIXED_MODELS = ['table', 'fetch', 'ground_plane', 'camera', 'sun']
@@ -36,7 +36,7 @@ TABLE_WIDTH = .58
 HALF_WIDTH = TABLE_WIDTH/2
 TABLE_LENGTH = .58
 HALF_LENGTH = TABLE_LENGTH/2
-BLANK_TABLES = ["blank-table.png", "blank-table-2.png", "blank-table-3.png"]
+BLANK_TABLES = ["blank-table.png", "blank-table-2.png", "blank-table-3.png", "blank-table-4.png"]
 
 
 def random_objects(n, selection=ALL_OBJECTS):
@@ -73,6 +73,16 @@ def random_poses(mincount=MIN_OBJ, maxcount=MAX_OBJ):
             poses[name] = gen_rand_pose(name, CENTER_X, CENTER_Y, TABLE_HEIGHT, TABLE_WIDTH - .1, TABLE_LENGTH - .1)
     return poses
 
+  
+CUBES = ['cube_' + str(i) for i in range(4)]
+def random_cube_poses(n=4, mincount=MIN_OBJ, maxcount=MAX_OBJ):
+    """Return dictionary of {cube_name: pos} for publishing. """
+    poses = {}
+    for model_name in CUBES:
+        # Generate a pose on the table and save to dict.
+        poses[model_name] = gen_rand_pose(model_name, CENTER_X, CENTER_Y, TABLE_HEIGHT, TABLE_WIDTH - .1, TABLE_LENGTH - .1)
+    return poses
+  
 
 def linear_points(objs, cx=CENTER_X, cy=CENTER_Y,
                   dx=HALF_WIDTH, dy=HALF_LENGTH, types_along_x=True):
@@ -226,40 +236,76 @@ SCENE_ORGS = {
     'messy': random_poses,
     'neat_linear': neat_linear_poses,
     'neat_cluster': neat_cluster_poses,
-    'neat_polygon': neat_polygon_poses
+    'neat_polygon': neat_polygon_poses,
+    'four_cube': random_cube_poses
 }
 
 
 def main(args):
-    rospy.init_node('episode initializer', anonymous=True)
+    # Usage example: python scene_generator.py neat_cluster clustered 100
+    try:
+        scene_org = SCENE_ORGS[sys.argv[1]]
+        img_dir = sys.argv[2]
+        count = 150 if len(sys.argv) < 4 else int(sys.argv[3])
+    except:
+        print("Usage: scene_generator.py <%s> <img_dir> <[opt]count>" % '/'.join(SCENE_ORGS.keys()))
+        exit()
 
-    # Make sure sim time is working
-    while not rospy.Time.now():
-        pass
+    print("==== %s SCENE GENERATOR SAVING TO data/%s ====" % (sys.argv[1], img_dir))
+    print("Using %s scene generator to generate 0x%x images." % (scene_org.__name__, count))
+
+    rospy.init_node('scene_maker', anonymous=True)
 
     # Setup GazeboClient
-    gc = GazeboClient(obj_mover=random_poses, min_objs=MIN_OBJ, max_objs=MAX_OBJ,
+    gc = GazeboClient(obj_mover=scene_org, min_objs=MIN_OBJ, max_objs=MAX_OBJ,
                       fixed_models=FIXED_MODELS)
 
-    # Loop generating scenes and saving images, with pause to let scene stabilize.
-    stabilize_pause = 0.1
-    i = 10
+    # Setup camera for saving images
+    ic = ImageSubscriber(img_dir=img_dir, ref_imgs=BLANK_TABLES)
+    
+    # Add models manually for four_cube
+    if scene_org == random_cube_poses:
+      gc.models = {}
+      for name in CUBES:
+        pose = gen_rand_pose(name, -5, -5, 0, 3, 3)
+        gc.models[name] = pose
+        gc.pub.publish(pose)
 
+    # Loop generating scenes and saving images, with pause to let scene stabilize.
+    stabilize_pause = 0.05
+    i = 0
+
+    gc.full_reset()
+    gc.full_reset()
     rospy.sleep(stabilize_pause*5)
     while (not rospy.is_shutdown()):
-        gc.mover_reset()
+        print("i: ", i)
         gc.generate_scene()
+        if i > count:
+            print("Saved %x images" % i)
+            gc.mover_reset()
+            exit()
+
+        # Wait for the scene to stabilize
+        # while not gc.is_stable():
+        #  pass
         rospy.sleep(stabilize_pause)
-        rl_state = gc.get_rl_state()
-        print (rl_state.shape)
-        print (rl_state)
+
+        # Save image
+        img_name = ic.save_image()
+        if img_name != "":
+            ic.pop_ref()
+            ic.add_ref(img_name)
+            i += 1
+
         # Reset scene and wait for objects to leave table
+        gc.mover_reset()
         rospy.sleep(stabilize_pause)
+        # hack_i = 0
+        # while not ic.check_blank() and hack_i < 100:
+        #     hack_i += 1
 
-        i -= 1
-        if i == 0:
-            break
-
+    print("Saved 0x%x images" % count)
     gc.mover_reset()
     exit()
 

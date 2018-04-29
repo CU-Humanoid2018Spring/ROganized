@@ -116,7 +116,7 @@ class GripperClient(object):
         self.open = True
         self.cmd = GripperCommandGoal()
         self.cmd.command.position = 0.3
-        self.cmd.command.max_effort = 2.0
+        self.cmd.command.max_effort = 1.2
         self.client.send_goal(self.cmd)
         self.client.wait_for_result()
 
@@ -242,6 +242,8 @@ class GazeboClient:
             for i, name in enumerate(msg.name):
                 if name in self.models:
                     self.models[name] = msg.pose[i]
+                elif name == 'fetch':
+                    self.robot_pose = msg.pose[i]
                 elif name in self.fixed_models:
                     #rospy.logwarn("Model name %s is fixed", name)
                     pass
@@ -281,10 +283,14 @@ class GazeboClient:
             self.pub.publish(random_pose)
 
     def get_pose(self, name):
+        if name == 'fetch':
+            return self.robot_pose
         return self.models[name]
 
     def set_pose(self, state):
         if self.models and state.model_name in self.models:
+            self.pub.publish(state)
+        elif state.model_name == 'fetch':
             self.pub.publish(state)
         else:
             rospy.logerr("Model name %s doesn't exist", state.model_name)
@@ -448,3 +454,18 @@ class ImageSubscriber(object):
 ################################################################################
 # END OF IMAGE PROCESSING CODE
 ################################################################################
+class ImageConverter:
+  def __init__(self):
+    self.bridge = CvBridge()
+    self.image_sub = rospy.Subscriber('/camera/rgb/image_raw',Image,self.callback)
+    self.cv_image = None
+  def callback(self,data):
+    try:
+      self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(e)
+
+  def get_rgb(self):
+    if self.cv_image is None:
+      return None
+    return self.cv_image.copy()

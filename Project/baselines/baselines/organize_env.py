@@ -6,26 +6,13 @@ import tensorflow as tf
 import math
 import time
 from baselines.organized_learner import OrgLearner, load_data
-#import roslib
-#roslib.load_manifest('roganized_rl')
 from baselines.scene_generator import random_poses
-from baselines.core import GazeboClient, ImageConverter
+from roganized.utils import GazeboClient, ImageConverter
 import rospy
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
 import cv2
-#from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
-
-import pyquaternion as pq
-
-def rotate_z(theta):
-    rot = pq.Quaternion(axis=[0,0,1],angle=theta)
-    q = Quaternion()
-    q.x = rot[1]
-    q.y = rot[2]
-    q.z = rot[3]
-    q.w = rot[0]
-    return q
+from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
 
 class OrganizeEnv(gym.Env):
     def __init__(self):
@@ -164,22 +151,22 @@ class OrganizeEnv(gym.Env):
             new_state.model_name = self.decoder[obj_id]
             new_state.pose = Pose( Point(x_to,y_to, 0.7),\
                                    Quaternion(0,0,0,1))
-            new_state.pose.orientation = rotate_z(theta_to)
+            new_state.pose.orientation = rotate(new_state.pose, 0, 0, theta_to)
             self.gazebo_client.set_pose(new_state)
 
 
     # This needs to be connected to our environment to do anything
     # Need not return anything, juse needs to randomly initialize the gazebo env
     def __init_episode__(self):
-        self.gazebo_client.mover_reset()
-        self.gazebo_client.generate_scene()
-        rospy.sleep(0.1)
+       self.gazebo_client.mover_reset()
+       self.gazebo_client.generate_scene()
+       rospy.sleep(0.1)
 
     # This needs to be connected to our environment to do anything
     # Should return a numpy array of dimensions [self.w, self.h, 3]
     def __get_obs__(self):
         obs_list = self.gazebo_client.get_rl_state()
-        obs_array = np.zeros([60,60], dtype=np.uint8) 
+        obs_array = np.zeros([60,60], dtype=np.uint8)
         names = dict()
         self.decoder = [None]
         for entry in obs_list:
@@ -198,7 +185,11 @@ class OrganizeEnv(gym.Env):
 
     def __get_img__(self):
         image = self.image_sub.get_rgb()
-        # print(image)
+        if image is None:
+            rospy.logwarn('rgb get None, retrying...')
+            rospy.sleep(0.01)
+            image = self.image_sub.get_rgb()
+        # print(image.shape)
         image = cv2.resize(image, (320, 240))
         return np.array([image])
 

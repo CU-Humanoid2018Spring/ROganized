@@ -1,3 +1,15 @@
+# ROganized
+A truly autonomous robotics solution for table orgainizing.
+
+This is a class project in *Humanoid Robots 2018*, instructed by Professor Peter Allen, Columbia University.
+## Packages
+| Package | Description |
+| --- | --- |
+| roganized_gazebo | The Gazebo simulation environment |
+| roganized_rl | Training data generation and RL integration |
+| roganized_grasping | Grasping and trajectory planning pipelines |
+| Project | Implementation of deep learning algorihtms |
+
 
 ## Installation
 Before installing the toolchain, make sure you have a proper github ssh key. If not, please follow [this guide](https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/) before moving forward.
@@ -13,7 +25,7 @@ $ source ~/.bashrc
 After installation, please run the below commands to verify.
 
 ```
-$ roslaunch roganzied_gazebo simple_grasp.launch
+$ roslaunch roganized_gazebo simple_grasp.launch
 
 # Open another terminal
 $ rostopic list | grep camera
