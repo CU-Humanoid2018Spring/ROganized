@@ -72,10 +72,10 @@ class TableManager(object):
     def spawn(self):
         rospy.wait_for_service("gazebo/spawn_sdf_model")
         spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
-        source='/home/yan/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
+        #source='/home/yan/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
 
-        source='/home/yan/team2_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
-        #source='/home/robert/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
+        #source='/home/yan/team2_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
+        source='/home/robert/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
         with open(source, "r") as f:
             cube_xml = f.read()
 
