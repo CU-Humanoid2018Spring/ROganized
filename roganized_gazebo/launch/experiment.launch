@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!--arg name="controller" default="false" doc="Activate navigation, head movers, arm and gripper?"/-->
-  <!--arg name="display" default="false" doc="Show GUI of gazebo and rviz?"/-->
+  <arg name="display" default="false" doc="Show GUI of gazebo and rviz?"/>
 
   <!--group if="$(arg controller)"-->
     <!-- Start MoveIt -->                                                         
@@ -26,7 +26,7 @@
 
   <!-- Import object models -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch"> 
-    <!--arg name="gui" value="$(arg display)"/-->
+    <arg name="gui" value="$(arg display)"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/> 
     <arg name="world_name" value="$(find roganized_gazebo)/worlds/test_zone.sdf"/>
@@ -40,8 +40,8 @@
   <!--/group-->
 
   <!-- RViz -->
-  <!--group if="$(arg display)"-->
+  <group if="$(arg display)">
     <arg name="rvizconfig" value="$(find roganized_gazebo)/config/camera.rviz"/>
     <node name="rviz" pkg="rviz" type="rviz" required="false" args="-d $(arg rvizconfig)" />
-  <!--/group-->
+  </group>
 </launch>
