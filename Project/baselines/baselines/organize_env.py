@@ -17,20 +17,20 @@ from moveit_python.geometry import rotate_pose_msg_by_euler_angles as rotate
 
 class OrganizeEnv(gym.Env):
     def __init__(self):
-        self.h = 60
-        self.w = 60
+        self.h = 5
+        self.w = 5
         self.max_t = 50
         self.last_100_eps = deque(maxlen=100)
         self.last_100_finals = deque(maxlen=100)
         self.ep_rew = 0.0
         self.ep_nb = 0
         self.r = 0
-        self.action_space = spaces.Box(-1, 1, shape=(4,))
+        self.action_space = spaces.Box(-1, 1, shape=(3,))
         self.observation_space = spaces.Box(low=np.zeros(shape=[self.w*self.h,]), high=256*np.ones(shape=[self.w*self.h,]))
         self.evaluator = OrgLearner()
 
 
-        rospy.init_node("rl_env")
+        #rospy.init_node("rl_env")
         self.table = TableManager()
         self.table.clear()
         self.table.spawn()
@@ -138,7 +138,7 @@ class OrganizeEnv(gym.Env):
 
     # This needs to be connected to our environment to do anything
     # Need not return anything, just needs to execute the action in gazebo
-    def __exec_move__(self, obj_id, x_to, y_to, theta_to):
+    def __exec_move__(self, obj_id, x_to, y_to):
         #new_state = ModelState()
         #print(x_from)
         #print(y_from)
@@ -148,12 +148,12 @@ class OrganizeEnv(gym.Env):
         #new_state.pose = Pose( Point(x_to,y_to, 0.7), Quaternion(0,0,0,0))
         #new_state.pose.orientaion = rotate_z(new_state.pose, 0, 0, theta_to)
         #new_state = ModelState()
-        if self.decoder[obj_id] is not None:
+        # if self.decoder[obj_id] is not None:
             #new_state.model_name = self.decoder[obj_id]
             #new_state.pose = Pose( Point(x_to,y_to, 0.7),\
             #                       Quaternion(0,0,0,1))
             #new_state.pose.orientation = rotate(new_state.pose, 0, 0, theta_to)
-            self.table.move_cube(obj_id, x_to, y_to)
+        self.table.move_cube(obj_id, x_to, y_to)
 
 
     # This needs to be connected to our environment to do anything
@@ -169,25 +169,29 @@ class OrganizeEnv(gym.Env):
     # Should return a numpy array of dimensions [self.w, self.h, 3]
     def __get_obs__(self):
         obs_list = []
+        obs_array = np.zeros([5,5], dtype=np.uint8)
         for i in range(4):
-            p = table.models['cube_{}'.format(i)].position
-            q = table.models['cube_{}'.format(i)].orientation
+            p = self.table.models['cube_{}'.format(i)].position
+            q = self.table.models['cube_{}'.format(i)].orientation
             obs_list.append([i, p.x, p.y, p.z, q.x, q.y, q.z, q.w])
-        obs_array = np.zeros([60,60], dtype=np.uint8)
-        names = dict()
-        self.decoder = [None]
-        for entry in obs_list:
-            raw_id = entry[0]
-            if raw_id not in names:
-                names[raw_id] = len(names)+1
-                self.decoder.append(raw_id)
-            proc_id = names[raw_id]
-            # SOMETHING WRONG HERE
-            #print('('+str(entry[1])+','+str(entry[2])+')')
-            x = int(round(100*entry[1])-170)
-            y = int(round(100*entry[2])+30)
-            if x < 60 and x >= 0 and y >= 0 and y < 60:
-                obs_array[x][y] = proc_id
+            x = int(round((p.x-0.35)/0.1))
+            y = int(round((p.y+0.2)/0.1))
+            obs_array[x][y] = i
+        # return np.array(obs_list)
+        # names = dict()
+        # self.decoder = [None]
+        # for entry in obs_list:
+        #     raw_id = entry[0]
+        #     if raw_id not in names:
+        #         names[raw_id] = len(names)+1
+        #         self.decoder.append(raw_id)
+        #     proc_id = names[raw_id]
+        #     # SOMETHING WRONG HERE
+        #     #print('('+str(entry[1])+','+str(entry[2])+')')
+        #     x = int(round(100*entry[1])-170)
+        #     y = int(round(100*entry[2])+30)
+        #     if x < 60 and x >= 0 and y >= 0 and y < 60:
+        #         obs_array[x][y] = proc_id
         return np.hstack(obs_array)
 
     def __get_img__(self):
@@ -225,13 +229,14 @@ class OrganizeEnv(gym.Env):
         #x_from = int(round(30*(action.item(0))))+29
         #y_from = int(round(30*(action.item(1))))+29
         obj_id = int(round(np.max(self.obs)*action.item(0)))
+        # print(action.item(0))
         if obj_id > 0:
-            x_to = 0.3*action.item(1)+2.0
-            y_to = 0.3*action.item(2)
-            theta_to = action.item(3)*math.pi
-            #print(action)
+            x_to = int(round(4*action.item(1)))
+            y_to = int(round(4*action.item(2)))
+            # theta_to = action.item(3)*math.pi
+            # print(action)
             #print('Move From: ('+str(x_from)+','+str(y_from)+') To: '+str(100*x_to)+','+str(100*y_to)+') At '+str(180*theta_to/math.pi))
-            self.__exec_move__(obj_id, x_to, y_to, theta_to)
+            self.__exec_move__(obj_id, x_to, y_to)
         self.t += 1
 
         done = (self.t > self.max_t or obj_id == 0)
@@ -239,8 +244,8 @@ class OrganizeEnv(gym.Env):
         img = self.__get_img__()
         if done:
             cv2.imwrite('./images/ep_'+str(self.ep_nb)+'_end.png', img[0])
-        else:
-            cv2.imwrite('./images/ep_'+str(self.ep_nb)+'_'+str(self.t)+'.png', img[0])
+        # else:
+        #     cv2.imwrite('./images/ep_'+str(self.ep_nb)+'_'+str(self.t)+'.png', img[0])
         new_score = self.evaluator.predict(img)
         diff = new_score-self.score
         self.r = np.sign(diff)*100**(np.abs(diff))

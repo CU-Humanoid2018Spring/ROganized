@@ -73,7 +73,7 @@ class TableManager(object):
         spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
         # source='/home/yan/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
 
-        source='/home/kelsey/team2_ws/src/Humanoid-Team2/roganized_gazebo/models/simple_cube/model.sdf'
+        source='/home/robert/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
         with open(source, "r") as f:
             cube_xml = f.read()
 
