@@ -7,8 +7,8 @@ import math
 import time
 from baselines.organized_learner import OrgLearner, load_data
 from baselines.scene_generator import random_poses
-from roganized_gazebo.table_manager import TableManager
-from roganized_rl.utils import ImageConverter
+from table_manager import TableManager
+from utils import ImageConverter
 import rospy
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Quaternion, Pose, Twist, Point
@@ -231,11 +231,11 @@ class OrganizeEnv(gym.Env):
         obj_id = int(round(np.max(self.obs)*action.item(0)))
         # print(action.item(0))
         if obj_id > 0:
-            x_to = int(round(4*action.item(1)))
-            y_to = int(round(4*action.item(2)))
+            x_to = int(round(2.0*action.item(1)))+2
+            y_to = int(round(2.0*action.item(2)))+2
             # theta_to = action.item(3)*math.pi
             # print(action)
-            #print('Move From: ('+str(x_from)+','+str(y_from)+') To: '+str(100*x_to)+','+str(100*y_to)+') At '+str(180*theta_to/math.pi))
+            # print('Move '+str(obj_id)+' To: '+str(x_to)+','+str(y_to)+')')
             self.__exec_move__(obj_id, x_to, y_to)
         self.t += 1
 
