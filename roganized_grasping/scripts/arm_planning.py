@@ -9,6 +9,7 @@ import argparse
 from math import sin, cos, pi
 from copy import deepcopy
 from roganized_gazebo.table_manager import TableManager
+from roganized_grasping.transform import relative_pose
 
 class FetchArm(object):
     def __init__(self):
@@ -52,18 +53,22 @@ def main():
 
     planning_scene = PlanningSceneInterface('base_link')
     planning_scene.clear()
+    robot_pose = table.models['fetch']
     for name, pose in table.models.iteritems():
         if 'cube' in name:
-            planning_scene.addCube(name, 0.045, pose.position.x,\
-                                   pose.position.y, pose.position.z)
-
+            p = relative_pose(robot_pose, pose)
+            planning_scene.addCube(name, 0.045, p.position.x,\
+                                   p.position.y, p.position.z)
+    return
     planning_scene.addBox("table", 0.5, 0.5, 0.02, 0.55, 0, 0.32)
 
+    robot_pose = table.models['fetch']
     box_pose = table.models['cube_'+str(args.c)]
-    rospy.loginfo('box {}: {}'.format(args.c,box_pose))
 
     arm = FetchArm()
-    target_pose = deepcopy(box_pose)
+    robot_pose = table.models['fetch']
+    box_pose = table.models['cube_'+str(args.c)]
+    target_pose = relative_pose(robot_pose, box_pose)
     target_pose.position.z += 0.15
     target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
     arm.plan_motion(target_pose)
@@ -77,8 +82,11 @@ def main():
     target_pose.position.z += 0.12
     arm.plan_motion(target_pose)
 
-    target_pose = deepcopy(table._grid_poses[args.x][args.y])
-    print 'destination pose: {}'.format(target_pose)
+    #target_pose = deepcopy(table._grid_poses[args.x][args.y])
+    robot_pose = table.models['fetch']
+    robot_pose = table.models['fetch']
+    box_pose = table.models['cube_'+str(args.c)]
+    target_pose = relative_pose(robot_pose, box_pose)
     target_pose.position.z += 0.15
     target_pose.orientation = Quaternion(0,cos(pi/4.),0,sin(pi/4.))
     arm.plan_motion(target_pose)

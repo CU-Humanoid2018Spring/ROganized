@@ -1,7 +1,8 @@
 from geometry_msgs.msg import PoseStamped ,Pose, Point, Quaternion, TransformStamped
-from tf.transformations import quaternion_multiply
+from tf.transformations import quaternion_multiply, quaternion_inverse, quaternion_matrix
 import tf
 import rospy
+import numpy as np
 
 def frame_transformation(parent_frame_id, child_frame_id):
     """ Returns geometry_msgs.msgs.Pose
@@ -44,13 +45,12 @@ def _inverse_quaternion(q):
     return q_inv
 
 def relative_pose(pose1, pose2):
-    result = Pose()
-    inv = _inverse_quaternion(pose1.orientation)
-    q1_inv = [inv.x, inv.y, inv.z, inv.w]
-    q2 = [pose2.orientation.x,pose2.orientation.y,pose2.orientation.y,pose2.orientation.w]
-    q_res = quaternion_multiply(q1_inv, q2)
-    result.orientation = Quaternion(q_res[0], q_res[1], q_res[2], q_res[3])
-    result.position.x = pose2.position.x - pose1.position.x
-    result.position.y = pose2.position.y - pose1.position.y
-    result.position.z = pose2.position.z - pose1.position.z
+    q0_1 = quaternion_inverse([pose1.orientation.x, pose1.orientation.y,\
+                               pose1.orientation.z, pose1.orientation.w])
+    T0_1 = quaternion_matrix(q0_1)
+    T0_1[:3,3] = [-pose1.position.x, -pose1.position.y, -pose1.position.z]
+    p = np.array([pose2.position.x, pose2.position.y, pose2.position.z, 1.0])
+    p_res = T0_1.dot(p)
+
+    result = Pose(Point(p_res[0],p_res[1], p_res[2]), Quaternion(0,0,0,1))
     return result
