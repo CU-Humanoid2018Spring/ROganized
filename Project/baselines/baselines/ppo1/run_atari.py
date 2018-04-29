@@ -4,7 +4,7 @@ from mpi4py import MPI
 from baselines.common import set_global_seeds
 from baselines import bench
 import os.path as osp
-from baselines import logger
+#from baselines import logger
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.cmd_util import atari_arg_parser
 
@@ -14,17 +14,15 @@ def train(env_id, num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     sess = U.single_threaded_session()
     sess.__enter__()
-    if rank == 0:
-        logger.configure()
-    else:
-        logger.configure(format_strs=[])
+    #if rank == 0:
+    #    logger.configure()
+    #else:
+    #    logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
     env = make_atari(env_id)
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space)
-    env = bench.Monitor(env, logger.get_dir() and
-        osp.join(logger.get_dir(), str(rank)))
     env.seed(workerseed)
 
     env = wrap_deepmind(env)

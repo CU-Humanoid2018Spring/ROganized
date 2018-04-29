@@ -50,13 +50,13 @@ class OrgLearner:
 
     # Model building
     def __model__(self, x, drop_rate):
-        x = tf.layers.batch_normalization(x)
-        # x = tf.layers.average_pooling2d(inputs=x, pool_size=[4,4], strides=4)
+        # x = tf.layers.batch_normalization(x)
         x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[3, 3], strides=1, padding="same",
                                  activation=tf.nn.relu)
         x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
         x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[3, 3], strides=1, padding="same",
                                  activation=tf.nn.relu)
+        
         # x = tf.layers.max_pooling2d(inputs=x, pool_size=[2, 2], strides=2)
         #
         # x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[1, 1], strides=1, padding="same",
@@ -92,12 +92,12 @@ class OrgLearner:
         # x = tf.layers.average_pooling2d(inputs=x, pool_size=[x.shape[1], x.shape[2]], strides=1)
         x = tf.layers.flatten(x)
 
-        # x = tf.layers.dense(x, 512)
-        # x = tf.layers.dropout(x, rate=drop_rate)
-        # x = tf.nn.relu(x)
-        # x = tf.layers.dense(x, 256)
-        # x = tf.layers.dropout(x, rate=drop_rate)
-        # x = tf.nn.relu(x)
+        x = tf.layers.dense(x, 512)
+        x = tf.layers.dropout(x, rate=drop_rate)
+        x = tf.nn.relu(x)
+        x = tf.layers.dense(x, 256)
+        x = tf.layers.dropout(x, rate=drop_rate)
+        x = tf.nn.relu(x)
         x = tf.layers.dense(x, 128)
         x = tf.layers.dropout(x, rate=drop_rate)
         x = tf.nn.relu(x)
@@ -182,11 +182,13 @@ def get_files_in_dir(path):
         files.extend(rec_files)
     return files
 
-def load_data(path):
+def load_data_old(path):
     import random
     import cv2
     X = []
     Y = []
+    stdev = 0.15
+    mean = 0.20
     messy = get_files_in_dir(path+'/messy')
     for file in messy:
         x = cv2.imread(file)
@@ -194,7 +196,10 @@ def load_data(path):
         # x[0][0] = 1
         X.append(x)
         # Y.append(np.array([0,1]))
-        Y.append(max(0.0, random.normalvariate(0.1, 0.2)))
+        noisy = random.normalvariate(mean, stdev)
+        while noisy < 0 or noisy > 1:
+            noisy = random.normalvariate(mean, stdev)
+        Y.append(noisy)
     nb_messy = len(Y)
     print('Loaded '+str(len(Y))+' messy images')
     neat = get_files_in_dir(path+'/neat')
@@ -210,15 +215,43 @@ def load_data(path):
         # x[0][0]=0
         X.append(x)
         # Y.append(np.array([1,0]))
-        Y.append(min(1.0, random.normalvariate(0.9, 0.2)))
+        noisy = random.normalvariate(1-mean, stdev)
+        while noisy < 0 or noisy > 1:
+            noisy = random.normalvariate(1-mean, stdev)
+        Y.append(noisy)
     print('Loaded '+str(len(Y)-nb_messy)+' neat images')
     print('Loaded '+str(len(Y))+' total images')
+    return X, Y
+
+
+def load_data(path):
+    import random
+    import cv2
+    from os import listdir
+    from os.path import isfile, join
+    X = []
+    Y = []
+    batches =  [join(path, f) for f in listdir(path) if not isfile(join(path, f))]
+    for batch in batches:
+        y = np.load(batch+'/scores.npy')
+        image_files = sorted([join(batch, f) for f in listdir(batch) if isfile(join(batch, f)) and 'png' in f])
+        for i in range(len(image_files)):
+            image_file = image_files[i]
+            # file = path + '/' + batch + '/'+image_file
+            x = cv2.imread(image_file)
+            x = cv2.resize(x, (320, 240))
+            X.append(x)
+            Y.append(y[i]/6.0)
+        # img_path = path+'/images/'+score_file.split('/')[-1][:-11]
+        # images = get_files_in_dir(img_path)
+        # scores = np.load(score_file)
+    print(max(Y))
     return X, Y
 
 # Runs a full suite of unit tests (initing, training, saving, restoring, and testing) and saves the model
 if __name__ == '__main__':
     import time
-    data = load_data('./data')
+    data = load_data('./data/scored_with_poses_30k')
     # test_data = load_data('/home/robert/Documents/ROganized/Project/baselines/baselines/test')
     test_data = data
     test_x = test_data[0]
@@ -226,6 +259,8 @@ if __name__ == '__main__':
     p = np.random.permutation(len(test_y))
     epochs = 10
     ol = OrgLearner()
+    sess = tf.Session()
+    ol.initialize(sess)
     print('Training Started')
     for i in range(epochs):
         start = time.time()

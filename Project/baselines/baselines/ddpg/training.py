@@ -6,7 +6,6 @@ import pickle
 from baselines.ddpg.ddpg import DDPG
 import baselines.common.tf_util as U
 
-from baselines import logger
 import numpy as np
 import tensorflow as tf
 from mpi4py import MPI
@@ -20,20 +19,17 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
     assert (np.abs(env.action_space.low) == env.action_space.high).all()  # we assume symmetric actions.
     max_action = env.action_space.high
-    logger.info('scaling actions by {} before executing in env'.format(max_action))
+    print('scaling actions by {} before executing in env'.format(max_action))
     agent = DDPG(actor, critic, memory, env.observation_space.shape, env.action_space.shape,
         gamma=gamma, tau=tau, normalize_returns=normalize_returns, normalize_observations=normalize_observations,
         batch_size=batch_size, action_noise=action_noise, param_noise=param_noise, critic_l2_reg=critic_l2_reg,
         actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
         reward_scale=reward_scale)
-    logger.info('Using agent with the following configuration:')
-    logger.info(str(agent.__dict__.items()))
+    print('Using agent with the following configuration:')
+    print(str(agent.__dict__.items()))
 
     # Set up logging stuff only for a single worker.
-    if rank == 0:
-        saver = tf.train.Saver()
-    else:
-        saver = None
+    saver = tf.train.Saver()
 
     step = 0
     episode = 0
@@ -179,11 +175,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             combined_stats['total/epochs'] = epoch + 1
             combined_stats['total/steps'] = t
 
-            for key in sorted(combined_stats.keys()):
-                logger.record_tabular(key, combined_stats[key])
-            logger.dump_tabular()
-            logger.info('')
-            logdir = logger.get_dir()
+            #for key in sorted(combined_stats.keys()):
+            #    logger.record_tabular(key, combined_stats[key])
+            #logger.dump_tabular()
+            print('')
+            #logdir = logger.get_dir()
+            logdir = './'
             if rank == 0 and logdir:
                 if hasattr(env, 'get_state'):
                     with open(os.path.join(logdir, 'env_state.pkl'), 'wb') as f:
@@ -191,4 +188,4 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 if eval_env and hasattr(eval_env, 'get_state'):
                     with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                         pickle.dump(eval_env.get_state(), f)
-
+        saver.save(sess, './rl_model.ckpt')

@@ -2,7 +2,6 @@ import argparse
 import time
 import os
 import logging
-from baselines import logger, bench
 from baselines.common.misc_util import (
     set_global_seeds,
     boolean_flag,
@@ -21,23 +20,18 @@ import rospy
 def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Configure things.
     rank = MPI.COMM_WORLD.Get_rank()
-    if rank != 0:
-        logger.set_level(logger.DISABLED)
 
     # Create envs.
     if env_id == 'organize_env':
         env = OrganizeEnv()
     else:
         env = gym.make(env_id)
-        env = bench.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(), str(rank)))
 
     if evaluation and rank==0:
         if env_id == 'organize_env':
             eval_env = OrganizeEnv()
         else:
             eval_env = gym.make(env_id)
-            eval_env = bench.Monitor(eval_env, os.path.join(logger.get_dir(), 'gym_eval'))
-            env = bench.Monitor(env, None)
     else:
         eval_env = None
 
@@ -68,7 +62,6 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     # Seed everything to make things reproducible.
     seed = seed + 1000000 * rank
-    logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
     tf.reset_default_graph()
     set_global_seeds(seed)
     env.seed(seed)
@@ -84,7 +77,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     if eval_env is not None:
         eval_env.close()
     if rank == 0:
-        logger.info('total runtime: {}s'.format(time.time() - start_time))
+        print('total runtime: {}s'.format(time.time() - start_time))
 
 
 def parse_args():
@@ -126,7 +119,5 @@ def parse_args():
 if __name__ == '__main__':
     #rospy.init_node('ddpg')
     args = parse_args()
-    if MPI.COMM_WORLD.Get_rank() == 0:
-        logger.configure()
     # Run actual script.
     run(**args)
