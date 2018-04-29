@@ -14,9 +14,9 @@ class OrgLearner:
         self.y = tf.placeholder(dtype=tf.float32, shape=([None, 1]))
         self.logit = self.__model__(self.x, drop_rate=self.drop_rate)
         self.out = tf.nn.sigmoid(self.logit)
-        self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.logit))
-        # self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logit))
-
+        # self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.logit))
+        #self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.out))
+        self.loss = tf.reduce_mean(abs(self.y-self.out))
         #
         # self.loss = -tf.reduce_mean(self.y*tf.log(self.out) + (1-self.y)*tf.log(1-self.out))
         self.train_step = tf.train.AdamOptimizer(self.lr).minimize(self.loss)

@@ -18,7 +18,7 @@ class TableManager(object):
     def __init__(self, table_model='simple_table', size=0.5, grids=5):
         rospy.init_node('table_manager')
         self.models = {}
-        self.cube_indices = []
+        self.cubes = []
         self._sub = rospy.Subscriber('/gazebo/model_states',ModelStates,\
                                      self._gazebo_callback)
         self._pub = rospy.Publisher('/gazebo/set_model_state', ModelState,\
@@ -41,6 +41,7 @@ class TableManager(object):
             for j in range(grids):
                 y = y0 - float(j) * grid_size
                 pose = Pose(Point(x,y,0.36), Quaternion(0,0,0,1))
+                print 'x, y = ', x, ', ', y
                 self._grid_poses[-1].append(pose)
 
     def _gazebo_callback(self, msg):
@@ -71,10 +72,10 @@ class TableManager(object):
     def spawn(self):
         rospy.wait_for_service("gazebo/spawn_sdf_model")
         spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
-        #source='/home/yan/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
+        source='/home/yan/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
 
-        #source='/home/yan/team2_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
-        source='/home/robert/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
+        source='/home/yan/team2_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
+        #source='/home/robert/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
         with open(source, "r") as f:
             cube_xml = f.read()
 
