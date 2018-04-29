@@ -5,7 +5,7 @@ import rospy
 import numpy as np
 
 def frame_transformation(parent_frame_id, child_frame_id):
-    """ Returns geometry_msgs.msgs.Pose
+    """ Returns geometry_msgs.msg.Pose
     Retrive the relative transformation pose from parent to child
     """
     listener = tf.TransformListener()
@@ -20,7 +20,7 @@ def frame_transformation(parent_frame_id, child_frame_id):
 
 
 def transform_pose(source_pose, source_frame, target_frame):
-    """ Returns geometry_msgs.msgs.Pose
+    """ Returns geometry_msgs.msg.Pose
     Transform the pose into another frame's perspective
     """
     pose_stamped = PoseStamped()
@@ -36,21 +36,22 @@ def transform_pose(source_pose, source_frame, target_frame):
             continue
         rate.sleep()
 
-def _inverse_quaternion(q):
-    q_inv = Quaternion()
-    q_inv.x = -q.x
-    q_inv.y = -q.y
-    q_inv.z = -q.z
-    q_inv.w =  q.w
-    return q_inv
-
 def relative_pose(pose1, pose2):
-    q0_1 = quaternion_inverse([pose1.orientation.x, pose1.orientation.y,\
-                               pose1.orientation.z, pose1.orientation.w])
-    T0_1 = quaternion_matrix(q0_1)
-    T0_1[:3,3] = [-pose1.position.x, -pose1.position.y, -pose1.position.z]
-    p = np.array([pose2.position.x, pose2.position.y, pose2.position.z, 1.0])
-    p_res = T0_1.dot(p)
+    """ Returns geometry_msgs.msg.Pose
+    Compute relative pose from pose1 to pose2
+    pose1 and pose2 are two poses measured from world frame
+    """
+    # Relative translation: p1 = R^0_1 * p0 + d^0_1
+    q1_inv = quaternion_inverse([pose1.orientation.x, pose1.orientation.y,\
+                                 pose1.orientation.z, pose1.orientation.w])
+    T1_inv = quaternion_matrix(q1_inv)
+    T1_inv[:3,3] = [-pose1.position.x, -pose1.position.y, -pose1.position.z]
+    p2 = np.array([pose2.position.x, pose2.position.y, pose2.position.z, 1.0])
+    p_res = T1_inv.dot(p2)
 
-    result = Pose(Point(p_res[0],p_res[1], p_res[2]), Quaternion(0,0,0,1))
+    # Relative rotation
+    q2 = [pose2.orientation.x,pose2.orientation.y,pose2.orientation.y,pose2.orientation.w]
+    q_res = quaternion_multiply(q1_inv, q2)
+
+    result = Pose(Point(p_res[0],p_res[1], p_res[2]), Quaternion(q_res[0], q_res[1], q_res[2], q_res[3]))
     return result
