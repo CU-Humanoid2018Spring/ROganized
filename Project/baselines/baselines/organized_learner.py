@@ -13,7 +13,8 @@ class OrgLearner:
         self.x = tf.placeholder(dtype=tf.float32, shape=([None, h, w, 3]))
         self.y = tf.placeholder(dtype=tf.float32, shape=([None, 1]))
         self.logit = self.__model__(self.x, drop_rate=self.drop_rate)
-        self.out = tf.nn.sigmoid(self.logit)
+        #self.out = tf.nn.sigmoid(self.logit)
+        self.out = self.logit
         # self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.logit))
         #self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.y, logits=self.out))
         self.loss = tf.reduce_mean(abs(self.y-self.out))

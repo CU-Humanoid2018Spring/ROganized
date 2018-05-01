@@ -20,25 +20,27 @@ class OrganizeEnv(gym.Env):
         self.h = 5
         self.w = 5
         self.max_t = 50
-        self.last_100_eps = deque(maxlen=100)
-        self.last_100_finals = deque(maxlen=100)
+        self.last_1000_eps = deque(maxlen=1000)
+        self.last_1000_finals = deque(maxlen=1000)
         self.ep_rew = 0.0
         self.ep_nb = 0
         self.r = 0
         self.action_space = spaces.Box(-1, 1, shape=(3,))
         self.observation_space = spaces.Box(low=np.zeros(shape=[self.w*self.h,]), high=256*np.ones(shape=[self.w*self.h,]))
         self.evaluator = OrgLearner()
+        self.log_file = open(str(int(time.time()))+'_log.txt', 'w+')
 
 
-        #rospy.init_node("rl_env")
+        rospy.init_node("rl_env")
         self.table = TableManager()
+        rospy.sleep(0.1)
         self.table.clear()
         self.table.spawn()
         self.image_sub = ImageConverter()
         self.reset()
  
     def train_org_learner(self):
-        data = load_data('./data/scored_with_poses_30k')
+        data = load_data('../data/scored_with_poses_30k')
         # valid = load_data('./valid')
         # test_data = load_data('/home/robert/Documents/ROganized/Project/baselines/baselines/test')
         epochs = 10
@@ -129,8 +131,8 @@ class OrganizeEnv(gym.Env):
         self.sess = tf.get_default_session()
         self.evaluator.initialize(sess)
     def train_learner(self):
-        # self.train_org_learner()
-        self.evaluator.restore()
+        self.train_org_learner()
+        #self.evaluator.restore()
         #valid = load_data('./data')
         #print('Valid Accuracy: '+str(self.test(valid)))
         #valid = load_data('./valid')
@@ -176,7 +178,9 @@ class OrganizeEnv(gym.Env):
             obs_list.append([i, p.x, p.y, p.z, q.x, q.y, q.z, q.w])
             x = int(round((p.x-0.35)/0.1))
             y = int(round((p.y+0.2)/0.1))
-            obs_array[x][y] = i
+            try:
+                obs_array[x][y] = i
+            except: pass
         # return np.array(obs_list)
         # names = dict()
         # self.decoder = [None]
@@ -206,10 +210,12 @@ class OrganizeEnv(gym.Env):
 
     def reset(self):
         if self.ep_nb > 0:
-            self.last_100_eps.append(self.ep_rew)
-            self.last_100_finals.append(self.score)
-            print('Episode '+str(self.ep_nb)+' Total Reward: '+str(self.ep_rew)+'\nAvg Total Rew: '+str(float(sum(self.last_100_eps))/len(self.last_100_eps)))
-            print('Episode '+str(self.ep_nb)+' Final Score: '+str(self.score)+'\nAvg Final Score: '+str(float(sum(self.last_100_finals))/len(self.last_100_finals))+'\n')
+            self.last_1000_eps.append(self.ep_rew)
+            self.last_1000_finals.append(self.score)
+            print('Episode '+str(self.ep_nb)+' Total Reward: '+str(self.ep_rew)+'\nAvg Total Rew: '+str(float(sum(self.last_1000_eps))/len(self.last_1000_eps)))
+            print('Episode '+str(self.ep_nb)+' Final Score: '+str(self.score)+'\nAvg Final Score: '+str(float(sum(self.last_1000_finals))/len(self.last_1000_finals))+'\n')
+            self.log_file.write(str(self.ep_nb)+' Total: '+str(self.ep_rew)+'\n')
+            self.log_file.write(str(self.ep_nb)+' Final: '+str(self.score)+'\n')
 
         self.ep_nb += 1
         print('Episode '+str(self.ep_nb)+' Starting...')
@@ -228,7 +234,7 @@ class OrganizeEnv(gym.Env):
     def step(self, action):
         #x_from = int(round(30*(action.item(0))))+29
         #y_from = int(round(30*(action.item(1))))+29
-        obj_id = int(round(np.max(self.obs)*action.item(0)))
+        obj_id = int(round(np.max(self.obs)*abs(action.item(0))))
         # print(action.item(0))
         if obj_id > 0:
             x_to = int(round(2.0*action.item(1)))+2
@@ -239,13 +245,13 @@ class OrganizeEnv(gym.Env):
             self.__exec_move__(obj_id, x_to, y_to)
         self.t += 1
 
-        done = (self.t > self.max_t or obj_id == 0)
+        done = (self.t > self.max_t)
         self.obs = self.__get_obs__()
         img = self.__get_img__()
         if done:
             cv2.imwrite('./images/ep_'+str(self.ep_nb)+'_end.png', img[0])
-        # else:
-        #     cv2.imwrite('./images/ep_'+str(self.ep_nb)+'_'+str(self.t)+'.png', img[0])
+        else:
+            cv2.imwrite('./images/ep_'+str(self.ep_nb)+'_'+str(self.t)+'.png', img[0])
         new_score = self.evaluator.predict(img)
         diff = new_score-self.score
         self.r = np.sign(diff)*100**(np.abs(diff))

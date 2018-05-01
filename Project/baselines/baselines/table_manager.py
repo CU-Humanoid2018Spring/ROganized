@@ -16,7 +16,7 @@ def _adjacent(pose1, pose2):
 
 class TableManager(object):
     def __init__(self, table_model='simple_table', size=0.5, grids=5):
-        rospy.init_node('table_manager')
+        #rospy.init_node('table_manager')
         self.models = {}
         self.cubes = []
         self._sub = rospy.Subscriber('/gazebo/model_states',ModelStates,\
