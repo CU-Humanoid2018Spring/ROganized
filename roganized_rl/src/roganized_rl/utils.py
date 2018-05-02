@@ -247,8 +247,8 @@ class GazeboClient:
                 elif name in self.fixed_models:
                     #rospy.logwarn("Model name %s is fixed", name)
                     pass
-                else:
-                    rospy.logerr("Model name %s does not exist", name)
+                #else:
+                #    rospy.logerr("Model name %s does not exist", name)
 
     def generate_scene(self):
         # Update existing models with new poses and publish

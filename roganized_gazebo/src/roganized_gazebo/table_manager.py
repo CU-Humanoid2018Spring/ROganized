@@ -16,7 +16,6 @@ def _adjacent(pose1, pose2):
 
 class TableManager(object):
     def __init__(self, table_model='simple_table', size=0.5, grids=5):
-        rospy.init_node('table_manager')
         self.models = {}
         self.cube_indices = []
         self._sub = rospy.Subscriber('/gazebo/model_states',ModelStates,\
@@ -29,8 +28,7 @@ class TableManager(object):
 
         for name, _ in self.models.iteritems():
             rospy.loginfo('Import model '+name)
-        #x0 = 0.55 + 0.1875
-        #y0 = 0.0 + 0.1875
+
         x0 = 0.55 + float(size)/2.0*(float(grids)-1.0)/float(grids)
         y0 = 0.0 + float(size)/2.0*(float(grids)-1.0)/float(grids)
         grid_size = float(size)/float(grids)
@@ -72,8 +70,6 @@ class TableManager(object):
         rospy.wait_for_service("gazebo/spawn_sdf_model")
         spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
         #source='/home/yan/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
-
-        #source='/home/yan/team2_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
         source='/home/robert/roganized_ws/src/ROganized/roganized_gazebo/models/simple_cube/model.sdf'
         with open(source, "r") as f:
             cube_xml = f.read()
